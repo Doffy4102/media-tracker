@@ -17,7 +17,7 @@ Track anime, manga, movies, TV series, and books in one place. Powered by TMDB, 
 
 - **Framework** — Next.js 16 (App Router)
 - **Language** — TypeScript
-- **Database** — SQLite via Prisma ORM
+- **Database** — PostgreSQL via Prisma ORM
 - **Auth** — JWT session cookies (jose + bcryptjs)
 - **UI** — Base UI, Tailwind CSS v4, Lucide icons
 - **APIs** — TMDB, Jikan (MyAnimeList), Google Books
@@ -58,20 +58,69 @@ Optional variables:
 |----------|-------------|
 | `GOOGLE_BOOKS_API_KEY` | Google Books API key (free, [enable here](https://console.cloud.google.com/apis/library/books.googleapis.com)) |
 
-### 3. Sync the database
+### 3. Set up a PostgreSQL database
 
-```bash
-npx prisma db push
-npx prisma generate
+You need a Postgres instance. Options:
+
+- **Local:** `createdb media_tracker` if you have Postgres installed
+- **Free cloud:** [Neon](https://neon.tech) (0.5GB storage, generous free tier)
+
+Once you have a connection string, add it to `.env`:
+
+```
+DATABASE_URL="postgresql://user:password@host:5432/media_tracker"
 ```
 
-### 4. Run the dev server
+### 4. Sync the database
+
+```bash
+npx prisma generate
+npx prisma db push
+```
+
+### 5. Run the dev server
 
 ```bash
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000). You'll land on the home page — click **Open Dashboard** to sign up and start tracking.
+
+## Deploy to Vercel
+
+### 1. Push to GitHub
+
+```bash
+git push origin main
+```
+
+### 2. Create a Neon database
+
+Go to [neon.tech](https://neon.tech), sign up, create a project, and copy the connection string.
+
+### 3. Connect Vercel to your repo
+
+- Go to [vercel.com](https://vercel.com), click **Add New → Project**
+- Import your GitHub repo
+- Under **Environment Variables**, add:
+
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | Your Neon connection string |
+| `TMDB_API_KEY` | Your TMDB API key |
+| `AUTH_SECRET` | Your 32-byte hex secret |
+| `GOOGLE_BOOKS_API_KEY` | (optional) Your Google Books API key |
+
+### 4. Deploy
+
+Click **Deploy**. Vercel will detect Next.js, build, and run `prisma generate` automatically. After the first deploy, run the database sync:
+
+```bash
+npx vercel env pull
+npx prisma db push
+```
+
+Or via SSH after deploy — Vercel's CLI handles this. Once deployed, your app is live at `your-project.vercel.app`.
 
 ## Project Structure
 
