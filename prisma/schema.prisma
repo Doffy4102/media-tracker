@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model MediaItem {
+  id          String    @id @default(cuid())
+  title       String
+  type        MediaType
+  apiId       String
+  posterUrl   String?
+  year        Int?
+  genres       String
+  description  String?
+  totalProgress Int?
+  createdAt    DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  userMedia   UserMedia[]
+
+  @@unique([type, apiId])
+}
+
+model UserMedia {
+  id            String    @id @default(cuid())
+  mediaItemId   String
+  mediaItem     MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
+  status        UserStatus
+  rating        Int?
+  review        String?
+  progress      Int?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum MediaType {
+  ANIME
+  MANGA
+  MOVIE
+  TV_SERIES
+  BOOK
+}
+
+enum UserStatus {
+  PLANTOWATCH
+  WATCHING
+  COMPLETED
+  DROPPED
+}
