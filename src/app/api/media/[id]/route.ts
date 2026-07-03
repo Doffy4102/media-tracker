@@ -4,6 +4,7 @@ import { verifySession } from "@/lib/dal";
 import { getTmdbDetails, getTmdbWatchProviders } from "@/lib/api/tmdb";
 import { getJikanDetails } from "@/lib/api/jikan";
 import { getBooksDetails } from "@/lib/api/books";
+import { getGameDetails } from "@/lib/api/games";
 import type { WatchSource } from "@/lib/types";
 
 async function getUserMediaOrNotFound(id: string, userId: string) {
@@ -42,6 +43,8 @@ async function refreshFromSource(mediaItem: {
         detail = await getJikanDetails(type as "anime" | "manga", mediaItem.apiId);
       } else if (source === "google_books") {
         detail = await getBooksDetails(mediaItem.apiId);
+      } else if (source === "rawg") {
+        detail = await getGameDetails(mediaItem.apiId);
       }
 
       if (detail) {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { searchJikan } from "@/lib/api/jikan";
 import { searchTmdb } from "@/lib/api/tmdb";
 import { searchBooks } from "@/lib/api/books";
+import { searchGames } from "@/lib/api/games";
 import type { MediaSearchResult } from "@/lib/types";
 import { verifySession } from "@/lib/dal";
 
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
 
     const types = type
       ? [type.toUpperCase()]
-      : ["ANIME", "MANGA", "MOVIE", "TV_SERIES", "BOOK"];
+      : ["ANIME", "MANGA", "MOVIE", "TV_SERIES", "BOOK", "GAME"];
 
     if (types.includes("ANIME") || types.includes("MANGA")) {
       const jikanType = types.includes("ANIME") && !types.includes("MANGA") ? "anime" :
@@ -73,6 +74,15 @@ export async function GET(request: Request) {
         results.push(...bookResults);
       } catch (e) {
         console.error("Google Books search error:", e);
+      }
+    }
+
+    if (types.includes("GAME")) {
+      try {
+        const gameResults = await searchGames(query);
+        results.push(...gameResults);
+      } catch (e) {
+        console.error("RAWG search error:", e);
       }
     }
 

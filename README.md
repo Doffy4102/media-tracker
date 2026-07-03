@@ -20,7 +20,7 @@ Track anime, manga, movies, TV series, and books in one place. Powered by TMDB, 
 - **Database** — PostgreSQL via Prisma ORM
 - **Auth** — JWT session cookies (jose + bcryptjs)
 - **UI** — Base UI, Tailwind CSS v4, Lucide icons
-- **APIs** — TMDB, Jikan (MyAnimeList), Google Books
+- **APIs** — TMDB, Jikan (MyAnimeList), Google Books, RAWG
 
 ## Prerequisites
 
@@ -57,6 +57,7 @@ Optional variables:
 | Variable | Description |
 |----------|-------------|
 | `GOOGLE_BOOKS_API_KEY` | Google Books API key (free, [enable here](https://console.cloud.google.com/apis/library/books.googleapis.com)) |
+| `RAWG_API_KEY` | RAWG API key (free, [get one here](https://rawg.io/apidocs)) |
 
 ### 3. Set up a PostgreSQL database
 
@@ -110,6 +111,7 @@ Go to [neon.tech](https://neon.tech), sign up, create a project, and copy the co
 | `TMDB_API_KEY` | Your TMDB API key |
 | `AUTH_SECRET` | Your 32-byte hex secret |
 | `GOOGLE_BOOKS_API_KEY` | (optional) Your Google Books API key |
+| `RAWG_API_KEY` | Your RAWG API key |
 
 ### 4. Deploy
 

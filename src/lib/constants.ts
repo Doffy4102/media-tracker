@@ -4,6 +4,7 @@ export const MediaTypeLabels: Record<string, string> = {
   MOVIE: "Movie",
   TV_SERIES: "TV",
   BOOK: "Book",
+  GAME: "Game",
 };
 
 export const UserStatusLabels: Record<string, string> = {
@@ -19,6 +20,7 @@ export const MediaTypeOptions = [
   { value: "MOVIE", label: "Movie" },
   { value: "TV_SERIES", label: "TV Series" },
   { value: "BOOK", label: "Book" },
+  { value: "GAME", label: "Game" },
 ];
 
 export const UserStatusOptions = [

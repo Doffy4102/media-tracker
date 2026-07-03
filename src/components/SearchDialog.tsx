@@ -220,14 +220,14 @@ export default function SearchDialog({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   ref={inputRef}
-                  placeholder="Search anime, manga, movies, TV, books..."
+                  placeholder="Search anime, manga, movies, TV, books, games..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="pl-9"
                 />
               </div>
               <div className="flex gap-2">
-                {(["ALL", "ANIME", "MANGA", "MOVIE", "TV_SERIES", "BOOK"] as const).map((t) => (
+                {(["ALL", "ANIME", "MANGA", "MOVIE", "TV_SERIES", "BOOK", "GAME"] as const).map((t) => (
                   <Button
                     key={t}
                     variant={selectedType === t ? "default" : "outline"}

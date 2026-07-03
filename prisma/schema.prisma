@@ -61,6 +61,7 @@ enum MediaType {
   MOVIE
   TV_SERIES
   BOOK
+  GAME
 }
 
 enum UserStatus {
