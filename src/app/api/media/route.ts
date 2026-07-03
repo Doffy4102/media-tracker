@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { UserStatus } from "@/lib/types";
+import { verifySession } from "@/lib/dal";
 
 export async function GET(request: NextRequest) {
+  const session = await verifySession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") as UserStatus | null;
     const type = searchParams.get("type");
     const sort = searchParams.get("sort") as string | null;
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { userId: session.userId };
     if (status) where.status = status;
     if (type) {
       const types = type.split(",");
@@ -86,6 +92,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await verifySession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { data } = body;
@@ -123,7 +134,7 @@ export async function POST(request: NextRequest) {
     });
 
     const existingUserMedia = await prisma.userMedia.findFirst({
-      where: { mediaItemId: mediaItem.id },
+      where: { mediaItemId: mediaItem.id, userId: session.userId },
     });
 
     if (existingUserMedia) {
@@ -155,6 +166,7 @@ export async function POST(request: NextRequest) {
 
     const userMedia = await prisma.userMedia.create({
       data: {
+        userId: session.userId,
         mediaItemId: mediaItem.id,
         status: data.status || "PLANTOWATCH",
       },

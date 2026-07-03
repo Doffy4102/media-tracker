@@ -15,13 +15,25 @@ import { MediaTypeOptions } from "@/lib/constants";
 
 type TabStatus = "PLANTOWATCH" | "WATCHING" | "COMPLETED" | "DROPPED" | "ALL";
 
+interface MediaItemShape {
+  id: string;
+  title: string;
+  type: string;
+  posterUrl?: string;
+  year?: number;
+  description?: string;
+  genres?: string[];
+  apiId?: string;
+  totalProgress?: number;
+}
+
 interface DashboardItem {
   id: string;
   status: string;
   rating?: number;
   review?: string;
   progress?: number;
-  mediaItem: Record<string, unknown>;
+  mediaItem: MediaItemShape;
   [key: string]: unknown;
 }
 

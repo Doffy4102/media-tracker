@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
+import AuthStatus from "@/components/AuthStatus";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,7 +41,10 @@ export default function RootLayout({
                 Dashboard
               </Link>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <AuthStatus />
+              <ThemeToggle />
+            </div>
           </div>
         </nav>
         <div className="flex-1 animate-fade-in">{children}</div>

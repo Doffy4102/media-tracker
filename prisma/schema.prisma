@@ -7,6 +7,16 @@ datasource db {
   provider = "sqlite"
 }
 
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userMedia UserMedia[]
+}
+
 model MediaItem {
   id          String    @id @default(cuid())
   title       String
@@ -26,6 +36,8 @@ model MediaItem {
 
 model UserMedia {
   id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   mediaItemId   String
   mediaItem     MediaItem @relation(fields: [mediaItemId], references: [id], onDelete: Cascade)
   status        UserStatus
@@ -36,6 +48,8 @@ model UserMedia {
   completedAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@unique([userId, mediaItemId])
 }
 
 enum MediaType {

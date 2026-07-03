@@ -1,6 +1,6 @@
-import { MediaType, UserStatus, MediaItem, UserMedia } from "@/generated/prisma/client";
+import { MediaType, UserStatus, MediaItem, UserMedia, User } from "@/generated/prisma/client";
 
-export type { MediaItem, UserMedia };
+export type { MediaItem, UserMedia, User };
 
 export { MediaType, UserStatus };
 

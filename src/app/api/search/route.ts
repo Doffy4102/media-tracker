@@ -3,8 +3,14 @@ import { searchJikan } from "@/lib/api/jikan";
 import { searchTmdb } from "@/lib/api/tmdb";
 import { searchBooks } from "@/lib/api/books";
 import type { MediaSearchResult } from "@/lib/types";
+import { verifySession } from "@/lib/dal";
 
 export async function GET(request: Request) {
+  const session = await verifySession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q");
   const type = searchParams.get("type");

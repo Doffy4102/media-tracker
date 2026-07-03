@@ -2,22 +2,48 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { MediaTypeLabels, UserStatusLabels } from "@/lib/constants";
 
-function getStatusColor(status: string) {
+function getStatusStyle(status: string) {
   switch (status) {
     case "WATCHING":
-      return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+      return {
+        bg: "bg-blue-500/90",
+        border: "border-blue-400/60",
+        text: "text-white",
+        shadow: "shadow-blue-500/30",
+      };
     case "COMPLETED":
-      return "bg-green-500/10 text-green-500 border-green-500/20";
+      return {
+        bg: "bg-green-500/90",
+        border: "border-green-400/60",
+        text: "text-white",
+        shadow: "shadow-green-500/30",
+      };
     case "PLANTOWATCH":
-      return "bg-amber-500/10 text-amber-500 border-amber-500/20";
+      return {
+        bg: "bg-amber-500/90",
+        border: "border-amber-400/60",
+        text: "text-white",
+        shadow: "shadow-amber-500/30",
+      };
     case "DROPPED":
-      return "bg-red-500/10 text-red-500 border-red-500/20";
+      return {
+        bg: "bg-red-500/90",
+        border: "border-red-400/60",
+        text: "text-white",
+        shadow: "shadow-red-500/30",
+      };
     default:
-      return "";
+      return {
+        bg: "bg-muted",
+        border: "border-border",
+        text: "text-foreground",
+        shadow: "",
+      };
   }
 }
 
@@ -30,16 +56,37 @@ interface MediaItemShape {
   description?: string;
   genres?: string[];
   apiId?: string;
+  totalProgress?: number;
 }
 
 interface UserMediaItemShape {
   id: string;
   status?: string;
+  rating?: number;
+  progress?: number;
+  mediaItem?: MediaItemShape;
   [key: string]: unknown;
+}
+
+function RatingStars({ rating }: { rating: number }) {
+  if (!rating) return null;
+  return (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Star
+          key={i}
+          className={`h-3 w-3 ${i < rating ? "fill-yellow-400 text-yellow-400" : "fill-none text-muted-foreground/30"}`}
+        />
+      ))}
+    </div>
+  );
 }
 
 export default function MediaCard({ item }: { item: UserMediaItemShape }) {
   const mediaItem: MediaItemShape = (item.mediaItem || item) as unknown as MediaItemShape;
+  const status = item.status;
+  const style = status ? getStatusStyle(status) : null;
+  const rating = item.rating ?? 0;
 
   return (
     <Link href={`/media/${item.id}`}>
@@ -65,17 +112,23 @@ export default function MediaCard({ item }: { item: UserMediaItemShape }) {
               {MediaTypeLabels[mediaItem.type] || mediaItem.type}
             </Badge>
           </div>
-          <div className="absolute bottom-2 left-2 transition-all duration-200 group-hover:translate-y-0.5">
-            {item.status && (
-              <Badge variant="outline" className={`text-xs shadow-sm backdrop-blur-sm ${getStatusColor(item.status)}`}>
-                {UserStatusLabels[item.status] || item.status}
+          <div className="absolute bottom-2 left-2 flex flex-col gap-1.5">
+            {status && style && (
+              <Badge
+                variant="outline"
+                className={`text-xs font-semibold border backdrop-blur-sm ${style.bg} ${style.text} ${style.border} shadow-sm`}
+              >
+                {UserStatusLabels[status] || status}
               </Badge>
             )}
           </div>
         </div>
-        <CardContent className="p-3 relative">
+        <CardContent className="p-3 relative space-y-1">
           <h3 className="font-medium text-sm line-clamp-2 leading-tight group-hover:text-primary transition-colors duration-200">{mediaItem.title}</h3>
-          <p className="text-xs text-muted-foreground mt-1">{mediaItem.year}</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">{mediaItem.year}</p>
+            {rating > 0 && <RatingStars rating={rating} />}
+          </div>
         </CardContent>
       </Card>
     </Link>

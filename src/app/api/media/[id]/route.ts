@@ -1,16 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { verifySession } from "@/lib/dal";
+
+async function getUserMediaOrNotFound(id: string, userId: string) {
+  const userMedia = await prisma.userMedia.findFirst({
+    where: { id, userId },
+    include: { mediaItem: true },
+  });
+  return userMedia;
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await verifySession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
-    const userMedia = await prisma.userMedia.findUnique({
-      where: { id },
-      include: { mediaItem: true },
-    });
+    const userMedia = await getUserMediaOrNotFound(id, session.userId);
 
     if (!userMedia) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -50,8 +61,18 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await verifySession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
+    const existing = await getUserMediaOrNotFound(id, session.userId);
+    if (!existing) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
     const body = await request.json();
     const { status, rating, review, progress, startedAt, completedAt } = body;
 
@@ -108,8 +129,18 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await verifySession();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
+    const existing = await getUserMediaOrNotFound(id, session.userId);
+    if (!existing) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
     await prisma.userMedia.delete({
       where: { id },
     });
