@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { UserStatus } from "@/lib/types";
 import { verifySession } from "@/lib/dal";
+import { getTmdbWatchProviders } from "@/lib/api/tmdb";
 
 export async function GET(request: NextRequest) {
   const session = await verifySession();
@@ -82,6 +83,9 @@ export async function GET(request: NextRequest) {
           description: um.mediaItem.description,
           genres: JSON.parse(um.mediaItem.genres),
           totalProgress: um.mediaItem.totalProgress,
+          externalScore: um.mediaItem.externalScore,
+          apiSource: um.mediaItem.apiSource,
+          watchSources: um.mediaItem.watchSources ? JSON.parse(um.mediaItem.watchSources) : undefined,
         },
       })),
     });
@@ -119,19 +123,40 @@ export async function POST(request: NextRequest) {
         genres: JSON.stringify(data.genres || []),
         description: data.description,
         totalProgress: data.totalProgress ?? undefined,
+        externalScore: data.externalScore ?? undefined,
+        apiSource: data.apiSource ?? undefined,
         updatedAt: new Date(),
       },
       create: {
         title: data.title,
         type: data.type,
         apiId: data.apiId,
+        apiSource: data.apiSource ?? undefined,
         posterUrl: data.posterUrl,
         year: data.year,
         genres: JSON.stringify(data.genres || []),
         description: data.description,
         totalProgress: data.totalProgress ?? undefined,
+        externalScore: data.externalScore ?? undefined,
       },
     });
+
+    if (data.apiSource === "tmdb" && !mediaItem.watchSources) {
+      try {
+        const tmdbType = data.type === "MOVIE" ? "movie" : data.type === "TV_SERIES" ? "tv" : null;
+        if (tmdbType) {
+          const sources = await getTmdbWatchProviders(data.apiId, tmdbType);
+          if (sources.length > 0) {
+            await prisma.mediaItem.update({
+              where: { id: mediaItem.id },
+              data: { watchSources: JSON.stringify(sources) },
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch watch providers:", e);
+      }
+    }
 
     const existingUserMedia = await prisma.userMedia.findFirst({
       where: { mediaItemId: mediaItem.id, userId: session.userId },
@@ -159,6 +184,7 @@ export async function POST(request: NextRequest) {
             description: mediaItem.description,
             genres: JSON.parse(mediaItem.genres),
             totalProgress: mediaItem.totalProgress,
+            watchSources: mediaItem.watchSources ? JSON.parse(mediaItem.watchSources) : undefined,
           },
         },
       });
@@ -195,10 +221,10 @@ export async function POST(request: NextRequest) {
             description: userMedia.mediaItem.description,
             genres: JSON.parse(userMedia.mediaItem.genres),
             totalProgress: userMedia.mediaItem.totalProgress,
+            watchSources: userMedia.mediaItem.watchSources ? JSON.parse(userMedia.mediaItem.watchSources) : undefined,
           },
         },
       },
-      { status: 201 }
     );
   } catch (error) {
     console.error("POST /api/media error:", error);

@@ -1,5 +1,5 @@
 const TMDB_BASE = "https://api.themoviedb.org/3";
-const IMAGE_BASE = "https://image.tmdb.org/t/p/w500";
+const IMAGE_BASE = "https://image.tmdb.org/t/p/w780";
 
 function getTmdbKey(): string {
   const key = process.env.TMDB_API_KEY;
@@ -58,6 +58,27 @@ interface TmdbDetailTv {
   genres: TmdbGenre[];
   vote_average: number;
   homepage?: string;
+  number_of_episodes?: number;
+}
+
+interface TmdbWatchProvider {
+  provider_name: string;
+  logo_path?: string;
+  provider_id: number;
+  display_priority: number;
+}
+
+interface TmdbWatchRegion {
+  link?: string;
+  flatrate?: TmdbWatchProvider[];
+  rent?: TmdbWatchProvider[];
+  buy?: TmdbWatchProvider[];
+  free?: TmdbWatchProvider[];
+}
+
+interface TmdbWatchResponse {
+  id: number;
+  results: Record<string, TmdbWatchRegion>;
 }
 
 function parseYear(dateStr?: string): number | undefined {
@@ -68,6 +89,45 @@ function parseYear(dateStr?: string): number | undefined {
 
 function posterUrl(path?: string): string | undefined {
   return path ? `${IMAGE_BASE}${path}` : undefined;
+}
+
+const LOGO_BASE = "https://image.tmdb.org/t/p/w92";
+
+export async function getTmdbWatchProviders(apiId: string, type: "movie" | "tv"): Promise<import("@/lib/types").WatchSource[]> {
+  const key = getTmdbKey();
+  const endpoint = type === "movie" ? "movie" : "tv";
+  const res = await fetch(
+    `${TMDB_BASE}/${endpoint}/${apiId}/watch/providers?api_key=${key}`,
+    { next: { revalidate: 86400 } }
+  );
+  if (!res.ok) return [];
+  const data: TmdbWatchResponse = await res.json();
+
+  const region = data.results?.US ?? Object.values(data.results ?? {})[0];
+  if (!region) return [];
+
+  const sources: import("@/lib/types").WatchSource[] = [];
+  const categories: Array<{ key: "flatrate" | "rent" | "buy" | "free"; label: string }> = [
+    { key: "flatrate", label: "Stream" },
+    { key: "rent", label: "Rent" },
+    { key: "buy", label: "Buy" },
+    { key: "free", label: "Free" },
+  ];
+
+  for (const cat of categories) {
+    const providers = region[cat.key];
+    if (!providers) continue;
+    for (const p of providers) {
+      sources.push({
+        name: p.provider_name,
+        logoPath: p.logo_path ?? "",
+        type: cat.key,
+        url: region.link ?? `https://www.themoviedb.org/${endpoint}/${apiId}/watch`,
+      });
+    }
+  }
+
+  return sources;
 }
 
 export async function searchTmdb(query: string, type: "movie" | "tv") {
@@ -92,6 +152,7 @@ export async function searchTmdb(query: string, type: "movie" | "tv") {
     description: item.overview || undefined,
     apiSource: "tmdb" as const,
     externalUrl: `https://www.themoviedb.org/${type}/${item.id}`,
+    externalScore: item.vote_average,
   }));
 }
 
@@ -105,6 +166,7 @@ export async function getTmdbDetails(id: string, type: "movie" | "tv") {
   const data: TmdbDetailMovie | TmdbDetailTv = await res.json();
   const mediaType = type === "movie" ? "MOVIE" as const : "TV_SERIES" as const;
 
+  const tvData = type === "tv" ? (data as TmdbDetailTv) : null;
   return {
     id: `tmdb_${type}_${data.id}`,
     title: "title" in data ? data.title : (data as TmdbDetailTv).name,
@@ -116,5 +178,7 @@ export async function getTmdbDetails(id: string, type: "movie" | "tv") {
     description: data.overview || undefined,
     apiSource: "tmdb" as const,
     externalUrl: `https://www.themoviedb.org/${type}/${data.id}`,
+    externalScore: data.vote_average,
+    totalProgress: type === "tv" ? (tvData?.number_of_episodes ?? undefined) : undefined,
   };
 }

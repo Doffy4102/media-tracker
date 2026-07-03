@@ -18,18 +18,21 @@ model User {
 }
 
 model MediaItem {
-  id          String    @id @default(cuid())
-  title       String
-  type        MediaType
-  apiId       String
-  posterUrl   String?
-  year        Int?
-  genres       String
-  description  String?
-  totalProgress Int?
-  createdAt    DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  userMedia   UserMedia[]
+  id            String    @id @default(cuid())
+  title         String
+  type          MediaType
+  apiId         String
+  apiSource     String?
+  posterUrl     String?
+  year          Int?
+  genres         String
+  description    String?
+  totalProgress  Int?
+  externalScore Float?
+  watchSources  String?
+  createdAt      DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  userMedia     UserMedia[]
 
   @@unique([type, apiId])
 }

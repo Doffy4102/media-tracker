@@ -25,6 +25,8 @@ interface MediaItemShape {
   genres?: string[];
   apiId?: string;
   totalProgress?: number;
+  externalScore?: number;
+  apiSource?: string;
 }
 
 interface DashboardItem {

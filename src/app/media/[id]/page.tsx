@@ -3,7 +3,7 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { RatingStars } from "@/components/RatingStars";
 import { MediaTypeLabels, UserStatusOptions } from "@/lib/constants";
-import type { UserStatus, MediaType } from "@/lib/types";
+import type { UserStatus, MediaType, WatchSource } from "@/lib/types";
 import {
   Select,
   SelectContent,
@@ -123,7 +123,7 @@ export default function MediaDetailPage({
     );
   }
 
-  const media = item.mediaItem as { id: string; title: string; type: MediaType; posterUrl?: string; year?: number; description?: string; genres?: string[]; totalProgress?: number };
+  const media = item.mediaItem as { id: string; title: string; type: MediaType; posterUrl?: string; year?: number; description?: string; genres?: string[]; totalProgress?: number; externalScore?: number; watchSources?: WatchSource[] };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
@@ -148,11 +148,49 @@ export default function MediaDetailPage({
               <div className="flex items-center gap-2 mt-2">
                 <Badge variant="secondary" className="transition-all duration-200 hover:scale-105">{MediaTypeLabels[media.type] || media.type}</Badge>
                 {media.year && <span className="text-sm text-muted-foreground">{media.year}</span>}
+                {media.externalScore != null && (
+                  <span className="text-sm text-muted-foreground flex items-center gap-1 ml-auto">
+                    <svg className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    {media.externalScore.toFixed(1)}
+                  </span>
+                )}
               </div>
             </div>
 
             {media.description && (
               <p className="text-muted-foreground leading-relaxed animate-fade-in-up stagger-2">{media.description}</p>
+            )}
+
+            {media.watchSources && media.watchSources.length > 0 && (
+              <div className="animate-fade-in-up stagger-2">
+                <h3 className="text-sm font-medium mb-3">Watch</h3>
+                <div className="flex flex-wrap gap-2">
+                  {media.watchSources.map((ws, i) => (
+                    <a
+                      key={`${ws.name}-${i}`}
+                      href={ws.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground transition-all duration-200 hover:bg-muted hover:border-foreground/20 hover:shadow-sm active:scale-[0.97]"
+                    >
+                      {ws.logoPath && (
+                        <Image
+                          src={`https://image.tmdb.org/t/p/w92${ws.logoPath}`}
+                          alt={ws.name}
+                          width={20}
+                          height={20}
+                          className="rounded object-contain"
+                        />
+                      )}
+                      {ws.name}
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">
+                        {ws.type === "flatrate" ? "Stream" : ws.type === "rent" ? "Rent" : ws.type === "buy" ? "Buy" : "Free"}
+                      </span>
+                      <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    </a>
+                  ))}
+                </div>
+              </div>
             )}
 
             <Separator className="animate-fade-in-up stagger-2" />
@@ -166,7 +204,9 @@ export default function MediaDetailPage({
                   <label className="text-sm font-medium">Status</label>
                   <Select value={status} onValueChange={(v) => setStatus(v as UserStatus)}>
                     <SelectTrigger className="transition-all duration-200 focus:ring-2 focus:ring-ring">
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue placeholder="Select status">
+                        {status ? UserStatusOptions.find((o) => o.value === status)?.label : ""}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {UserStatusOptions.map((opt) => (

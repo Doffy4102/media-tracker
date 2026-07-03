@@ -36,6 +36,7 @@ export async function searchJikan(query: string, type: "anime" | "manga") {
     apiSource: "jikan",
     externalUrl: item.url as string,
     totalProgress: type === "anime" ? (item.episodes as number | null) ?? undefined : (item.chapters as number | null) ?? undefined,
+    externalScore: (item.score as number) ?? undefined,
   }));
 }
 
@@ -59,5 +60,7 @@ export async function getJikanDetails(type: "anime" | "manga", id: string) {
     description: item.synopsis as string,
     apiSource: "jikan",
     externalUrl: item.url as string,
+    externalScore: (item.score as number) ?? undefined,
+    totalProgress: type === "anime" ? (item.episodes as number | null) ?? undefined : (item.chapters as number | null) ?? undefined,
   };
 }

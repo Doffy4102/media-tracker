@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { MediaTypeLabels, UserStatusLabels } from "@/lib/constants";
@@ -14,35 +13,30 @@ function getStatusStyle(status: string) {
         bg: "bg-blue-500/90",
         border: "border-blue-400/60",
         text: "text-white",
-        shadow: "shadow-blue-500/30",
       };
     case "COMPLETED":
       return {
         bg: "bg-green-500/90",
         border: "border-green-400/60",
         text: "text-white",
-        shadow: "shadow-green-500/30",
       };
     case "PLANTOWATCH":
       return {
         bg: "bg-amber-500/90",
         border: "border-amber-400/60",
         text: "text-white",
-        shadow: "shadow-amber-500/30",
       };
     case "DROPPED":
       return {
         bg: "bg-red-500/90",
         border: "border-red-400/60",
         text: "text-white",
-        shadow: "shadow-red-500/30",
       };
     default:
       return {
         bg: "bg-muted",
         border: "border-border",
         text: "text-foreground",
-        shadow: "",
       };
   }
 }
@@ -68,25 +62,14 @@ interface UserMediaItemShape {
   [key: string]: unknown;
 }
 
-function RatingStars({ rating }: { rating: number }) {
-  if (!rating) return null;
-  return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star
-          key={i}
-          className={`h-3 w-3 ${i < rating ? "fill-yellow-400 text-yellow-400" : "fill-none text-muted-foreground/30"}`}
-        />
-      ))}
-    </div>
-  );
-}
-
 export default function MediaCard({ item }: { item: UserMediaItemShape }) {
   const mediaItem: MediaItemShape = (item.mediaItem || item) as unknown as MediaItemShape;
   const status = item.status;
   const style = status ? getStatusStyle(status) : null;
   const rating = item.rating ?? 0;
+  const progress = item.progress ?? 0;
+  const total = mediaItem.totalProgress;
+  const showProgress = total != null && total > 0;
 
   return (
     <Link href={`/media/${item.id}`}>
@@ -122,12 +105,24 @@ export default function MediaCard({ item }: { item: UserMediaItemShape }) {
               </Badge>
             )}
           </div>
+          {showProgress && (
+            <div className="absolute bottom-2 right-2">
+              <div className="text-[11px] font-medium text-white bg-background/60 backdrop-blur-sm rounded-md px-1.5 py-0.5 border border-white/10 shadow-sm">
+                {progress}/{total}
+              </div>
+            </div>
+          )}
         </div>
         <CardContent className="p-3 relative space-y-1">
           <h3 className="font-medium text-sm line-clamp-2 leading-tight group-hover:text-primary transition-colors duration-200">{mediaItem.title}</h3>
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">{mediaItem.year}</p>
-            {rating > 0 && <RatingStars rating={rating} />}
+            {rating > 0 && (
+              <span className="text-xs font-medium text-muted-foreground flex items-center gap-0.5">
+                {rating}
+                <svg className="h-3 w-3 fill-yellow-400 text-yellow-400" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>

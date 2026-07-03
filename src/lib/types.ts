@@ -4,6 +4,13 @@ export type { MediaItem, UserMedia, User };
 
 export { MediaType, UserStatus };
 
+export interface WatchSource {
+  name: string;
+  logoPath: string;
+  type: "flatrate" | "rent" | "buy" | "free";
+  url: string;
+}
+
 export interface MediaSearchResult {
   id: string;
   title: string;
@@ -16,4 +23,5 @@ export interface MediaSearchResult {
   apiSource: string;
   externalUrl?: string;
   totalProgress?: number;
+  externalScore?: number;
 }

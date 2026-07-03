@@ -89,6 +89,8 @@ export default function SearchDialog({
             genres: selectedResult.genres as string[],
             description: selectedResult.description as string,
             totalProgress: selectedResult.totalProgress as number | undefined,
+            externalScore: selectedResult.externalScore as number | undefined,
+            apiSource: selectedResult.apiSource as string | undefined,
             status: addStatus,
           },
         }),

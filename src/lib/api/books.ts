@@ -18,13 +18,16 @@ export async function searchBooks(query: string) {
       title: info.title as string,
       type: "BOOK" as const,
       apiId: item.id as string,
-      posterUrl: (imageLinks?.thumbnail as string)?.replace("http:", "https:"),
+      posterUrl: (imageLinks?.thumbnail as string)
+        ?.replace("http:", "https:")
+        ?.replace("zoom=1", "zoom=3"),
       year: (info.publishedDate as string)?.slice(0, 4) ? parseInt((info.publishedDate as string).slice(0, 4)) : undefined,
       genres: (info.categories as string[]) || [],
       description: info.description as string,
       apiSource: "google_books",
       externalUrl: info.infoLink as string,
       totalProgress: (info.pageCount as number) ?? undefined,
+      externalScore: (info.averageRating as number) ?? undefined,
     };
   });
 }
@@ -42,11 +45,15 @@ export async function getBooksDetails(id: string) {
     title: info.title as string,
     type: "BOOK" as const,
     apiId: item.id as string,
-    posterUrl: (imageLinks?.thumbnail as string)?.replace("http:", "https:"),
+    posterUrl: (imageLinks?.thumbnail as string)
+        ?.replace("http:", "https:")
+        ?.replace("zoom=1", "zoom=3"),
     year: (info.publishedDate as string)?.slice(0, 4) ? parseInt((info.publishedDate as string).slice(0, 4)) : undefined,
     genres: (info.categories as string[]) || [],
     description: info.description as string,
     apiSource: "google_books",
     externalUrl: info.infoLink as string,
+    externalScore: (info.averageRating as number) ?? undefined,
+    totalProgress: (info.pageCount as number) ?? undefined,
   };
 }

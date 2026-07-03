@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import { useState } from "react";
 import { Film, BookOpen, Tv, Library } from "lucide-react";
+import AuthModal from "@/components/AuthModal";
 
 const mediaIcons = [
   { Icon: Film, label: "Movies", delay: "stagger-1", x: "-translate-x-20", y: "-translate-y-8" },
@@ -11,6 +12,8 @@ const mediaIcons = [
 ];
 
 export default function Home() {
+  const [authOpen, setAuthOpen] = useState(false);
+
   return (
     <div className="relative min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-background via-background to-muted/30">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -41,15 +44,17 @@ export default function Home() {
           </p>
         </div>
         <div className="animate-fade-in-up stagger-3">
-          <Link
-            href="/dashboard"
-            className="group inline-flex h-11 items-center justify-center rounded-xl bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.97]"
+          <button
+            onClick={() => setAuthOpen(true)}
+            className="group inline-flex h-11 items-center justify-center rounded-xl bg-primary px-6 py-2 text-sm font-medium text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.97] cursor-pointer"
           >
             Open Dashboard
             <span className="ml-2 inline-block transition-transform duration-200 group-hover:translate-x-1">&rarr;</span>
-          </Link>
+          </button>
         </div>
       </div>
+
+      <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
     </div>
   );
 }
