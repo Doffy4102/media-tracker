@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
       try {
         const tmdbType = data.type === "MOVIE" ? "movie" : data.type === "TV_SERIES" ? "tv" : null;
         if (tmdbType) {
-          const sources = await getTmdbWatchProviders(data.apiId, tmdbType);
+          const sources = await getTmdbWatchProviders(data.apiId, tmdbType, data.title);
           if (sources.length > 0) {
             await prisma.mediaItem.update({
               where: { id: mediaItem.id },

@@ -93,7 +93,44 @@ function posterUrl(path?: string): string | undefined {
 
 const LOGO_BASE = "https://image.tmdb.org/t/p/w92";
 
-export async function getTmdbWatchProviders(apiId: string, type: "movie" | "tv"): Promise<import("@/lib/types").WatchSource[]> {
+const PROVIDER_URLS: Record<string, (title: string) => string> = {
+  Netflix: (t) => `https://www.netflix.com/search?q=${encodeURIComponent(t)}`,
+  "Amazon Prime Video": (t) => `https://www.amazon.com/s?k=${encodeURIComponent(t)}&i=instant-video`,
+  "Prime Video": (t) => `https://www.amazon.com/s?k=${encodeURIComponent(t)}&i=instant-video`,
+  Hulu: (t) => `https://www.hulu.com/search?q=${encodeURIComponent(t)}`,
+  "Disney Plus": (t) => `https://www.disneyplus.com/search/${encodeURIComponent(t)}`,
+  "Disney+": (t) => `https://www.disneyplus.com/search/${encodeURIComponent(t)}`,
+  "HBO Max": (t) => `https://play.max.com/search?q=${encodeURIComponent(t)}`,
+  Max: (t) => `https://play.max.com/search?q=${encodeURIComponent(t)}`,
+  "Apple TV Plus": (t) => `https://tv.apple.com/search?term=${encodeURIComponent(t)}`,
+  "Apple TV+": (t) => `https://tv.apple.com/search?term=${encodeURIComponent(t)}`,
+  "Apple TV": (t) => `https://tv.apple.com/search?term=${encodeURIComponent(t)}`,
+  "YouTube Premium": (t) => `https://www.youtube.com/results?search_query=${encodeURIComponent(t)}`,
+  YouTube: (t) => `https://www.youtube.com/results?search_query=${encodeURIComponent(t)}`,
+  Crunchyroll: (t) => `https://www.crunchyroll.com/search?q=${encodeURIComponent(t)}`,
+  Funimation: (t) => `https://www.funimation.com/search?q=${encodeURIComponent(t)}`,
+  Tubi: (t) => `https://tubitv.com/search/${encodeURIComponent(t)}`,
+  Peacock: (t) => `https://www.peacocktv.com/search?q=${encodeURIComponent(t)}`,
+  "Peacock Premium": (t) => `https://www.peacocktv.com/search?q=${encodeURIComponent(t)}`,
+  Paramount: (t) => `https://www.paramountplus.com/search/?query=${encodeURIComponent(t)}`,
+  "Paramount Plus": (t) => `https://www.paramountplus.com/search/?query=${encodeURIComponent(t)}`,
+  "Mubi": (t) => `https://mubi.com/en/search?query=${encodeURIComponent(t)}`,
+  "Criterion Channel": (t) => `https://www.criterionchannel.com/search?q=${encodeURIComponent(t)}`,
+  Plex: (t) => `https://watch.plex.tv/search?q=${encodeURIComponent(t)}`,
+  "Pluto TV": (t) => `https://pluto.tv/search?q=${encodeURIComponent(t)}`,
+  "Amazon Video": (t) => `https://www.amazon.com/s?k=${encodeURIComponent(t)}&i=instant-video`,
+  "Google Play Movies": (t) => `https://play.google.com/store/search?q=${encodeURIComponent(t)}&c=movies`,
+  "Microsoft Store": (t) => `https://www.microsoft.com/en-us/search?q=${encodeURIComponent(t)}`,
+  Vudu: (t) => `https://www.vudu.com/content/movies/search?search=${encodeURIComponent(t)}`,
+  "AMC+": (t) => `https://www.amcplus.com/search?q=${encodeURIComponent(t)}`,
+  Shudder: (t) => `https://shudder.com/search?q=${encodeURIComponent(t)}`,
+  BritBox: (t) => `https://www.britbox.com/search?q=${encodeURIComponent(t)}`,
+  "Acorn TV": (t) => `https://www.acorn.tv/search?q=${encodeURIComponent(t)}`,
+  "Roku Channel": (t) => `https://therokuchannel.roku.com/search/${encodeURIComponent(t)}`,
+  "Freevee": (t) => `https://www.amazon.com/s?k=${encodeURIComponent(t)}&i=instant-video`,
+};
+
+export async function getTmdbWatchProviders(apiId: string, type: "movie" | "tv", title?: string): Promise<import("@/lib/types").WatchSource[]> {
   const key = getTmdbKey();
   const endpoint = type === "movie" ? "movie" : "tv";
   const res = await fetch(
@@ -105,6 +142,8 @@ export async function getTmdbWatchProviders(apiId: string, type: "movie" | "tv")
 
   const region = data.results?.US ?? Object.values(data.results ?? {})[0];
   if (!region) return [];
+
+  const fallbackUrl = region.link ?? `https://www.themoviedb.org/${endpoint}/${apiId}/watch`;
 
   const sources: import("@/lib/types").WatchSource[] = [];
   const categories: Array<{ key: "flatrate" | "rent" | "buy" | "free"; label: string }> = [
@@ -118,11 +157,12 @@ export async function getTmdbWatchProviders(apiId: string, type: "movie" | "tv")
     const providers = region[cat.key];
     if (!providers) continue;
     for (const p of providers) {
+      const urlFn = title ? PROVIDER_URLS[p.provider_name] : undefined;
       sources.push({
         name: p.provider_name,
         logoPath: p.logo_path ?? "",
         type: cat.key,
-        url: region.link ?? `https://www.themoviedb.org/${endpoint}/${apiId}/watch`,
+        url: urlFn ? urlFn(title!) : fallbackUrl,
       });
     }
   }

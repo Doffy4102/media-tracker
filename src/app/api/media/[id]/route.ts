@@ -17,6 +17,7 @@ async function getUserMediaOrNotFound(id: string, userId: string) {
 
 async function refreshFromSource(mediaItem: {
   id: string;
+  title: string;
   apiId: string;
   apiSource: string | null;
   type: string;
@@ -60,7 +61,7 @@ async function refreshFromSource(mediaItem: {
     if (mediaItem.watchSources == null && source === "tmdb") {
       const tmdbType = mediaItem.type === "MOVIE" ? "movie" : mediaItem.type === "TV_SERIES" ? "tv" : null;
       if (tmdbType) {
-        const sources = await getTmdbWatchProviders(mediaItem.apiId, tmdbType);
+        const sources = await getTmdbWatchProviders(mediaItem.apiId, tmdbType, mediaItem.title);
         if (sources.length > 0) {
           update.watchSources = JSON.stringify(sources);
         }

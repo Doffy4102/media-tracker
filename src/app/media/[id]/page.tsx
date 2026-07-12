@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { RatingStars } from "@/components/RatingStars";
-import { MediaTypeLabels, UserStatusOptions } from "@/lib/constants";
+import { MediaTypeLabels, UserStatusOptions, DEFAULT_STREAMING_SITES } from "@/lib/constants";
 import type { UserStatus, MediaType, WatchSource } from "@/lib/types";
 import {
   Select,
@@ -191,6 +191,26 @@ export default function MediaDetailPage({
                   ))}
                 </div>
               </div>
+            )}
+
+            {["ANIME", "MOVIE", "TV_SERIES"].includes(media.type) && (
+            <div className="animate-fade-in-up stagger-2">
+              <h3 className="text-sm font-medium mb-3">Stream Free</h3>
+              <div className="flex flex-wrap gap-2">
+                {DEFAULT_STREAMING_SITES.map((site) => (
+                  <a
+                    key={site.domain}
+                    href={site.searchUrl(media.title)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground transition-all duration-200 hover:bg-muted hover:border-foreground/20 hover:shadow-sm active:scale-[0.97]"
+                  >
+                    {site.name}
+                    <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  </a>
+                ))}
+              </div>
+            </div>
             )}
 
             <Separator className="animate-fade-in-up stagger-2" />

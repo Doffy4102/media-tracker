@@ -75,5 +75,5 @@ export async function login(prevState: AuthState, formData: FormData) {
 
 export async function logout() {
   await deleteSession();
-  redirect("/");
+  redirect("/auth/login");
 }

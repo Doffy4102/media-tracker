@@ -11,6 +11,12 @@ export interface WatchSource {
   url: string;
 }
 
+export interface DefaultSite {
+  name: string;
+  domain: string;
+  searchUrl: (title: string) => string;
+}
+
 export interface MediaSearchResult {
   id: string;
   title: string;

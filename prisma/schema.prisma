@@ -29,7 +29,7 @@ model MediaItem {
   description    String?
   totalProgress  Int?
   externalScore Float?
-  watchSources  String?
+  watchSources   String?
   createdAt      DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   userMedia     UserMedia[]

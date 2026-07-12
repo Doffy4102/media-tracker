@@ -47,7 +47,7 @@ export default function AuthStatus() {
       await fetch("/api/auth/logout", { method: "POST" });
       setUser(null);
       setLogoutOpen(false);
-      router.push("/");
+      router.push("/auth/login");
     } catch {}
   };
 
