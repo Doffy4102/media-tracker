@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import MediaCard from "@/components/MediaCard";
 import SearchDialog from "@/components/SearchDialog";
+import MalImportDialog from "@/components/MalImportDialog";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -12,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MediaTypeOptions } from "@/lib/constants";
+import { Upload } from "lucide-react";
 
 type TabStatus = "PLANTOWATCH" | "WATCHING" | "COMPLETED" | "DROPPED" | "ALL";
 
@@ -56,6 +58,7 @@ export default function DashboardPage() {
   const [items, setItems] = useState<DashboardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [sortBy, setSortBy] = useState("updatedAt");
   const [typeFilters, setTypeFilters] = useState<string[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -135,12 +138,22 @@ export default function DashboardPage() {
       <header className="sticky top-[3.5rem] z-40 border-b border-border bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Dashboard</h1>
-          <Button
-            onClick={() => setSearchOpen(true)}
-            className="transition-all duration-200 hover:scale-105 active:scale-[0.97]"
-          >
-            + Add Media
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setImportOpen(true)}
+              className="transition-all duration-200 hover:scale-105 active:scale-[0.97]"
+            >
+              <Upload className="h-4 w-4 mr-1" />
+              Import
+            </Button>
+            <Button
+              onClick={() => setSearchOpen(true)}
+              className="transition-all duration-200 hover:scale-105 active:scale-[0.97]"
+            >
+              + Add Media
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -240,6 +253,7 @@ export default function DashboardPage() {
       </main>
 
       <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} onAdd={refresh} />
+      <MalImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={refresh} />
     </div>
   );
 }

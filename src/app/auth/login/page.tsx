@@ -28,6 +28,11 @@ export default function LoginPage() {
               <label htmlFor="password" className="text-sm font-medium">Password</label>
               <Input id="password" name="password" type="password" placeholder="••••••••" required />
               {state?.errors?.password?.map((e) => (<p key={e} className="text-xs text-destructive">{e}</p>))}
+              <div className="text-right">
+                <Link href="/auth/forgot-password" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
             </div>
             {state?.message && <p className="text-sm text-destructive">{state.message}</p>}
             <Button type="submit" disabled={pending} className="w-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
