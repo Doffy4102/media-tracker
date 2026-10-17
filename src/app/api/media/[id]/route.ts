@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
-import { getTmdbDetails, getTmdbWatchProviders } from "@/lib/api/tmdb";
-import { getJikanDetails } from "@/lib/api/jikan";
-import { getBooksDetails } from "@/lib/api/books";
-import { getGameDetails } from "@/lib/api/games";
-import type { WatchSource } from "@/lib/types";
+import { providerForSource } from "@/lib/media-providers";
+import { toUserMediaView } from "@/lib/media-view";
+import type { MediaType } from "@/lib/types";
 
 async function getUserMediaOrNotFound(id: string, userId: string) {
   const userMedia = await prisma.userMedia.findFirst({
@@ -27,44 +25,32 @@ async function refreshFromSource(mediaItem: {
 }) {
   if (mediaItem.totalProgress != null && mediaItem.externalScore != null && mediaItem.watchSources != null) return;
 
-  const source = mediaItem.apiSource;
-  if (!source) return;
+  const provider = providerForSource(mediaItem.apiSource);
+  if (!provider) return;
+
+  const mediaType = mediaItem.type as MediaType;
 
   try {
     const update: Record<string, unknown> = {};
 
     if (mediaItem.totalProgress == null || mediaItem.externalScore == null) {
-      let detail: { totalProgress?: number; externalScore?: number } | null = null;
-
-      if (source === "tmdb") {
-        const type = mediaItem.type === "MOVIE" ? "movie" : "tv";
-        detail = await getTmdbDetails(mediaItem.apiId, type as "movie" | "tv");
-      } else if (source === "jikan") {
-        const type = mediaItem.type === "ANIME" ? "anime" : "manga";
-        detail = await getJikanDetails(type as "anime" | "manga", mediaItem.apiId);
-      } else if (source === "google_books") {
-        detail = await getBooksDetails(mediaItem.apiId);
-      } else if (source === "rawg") {
-        detail = await getGameDetails(mediaItem.apiId);
-      }
-
-      if (detail) {
+      try {
+        const detail = await provider.details(mediaItem.apiId, mediaType);
         if (mediaItem.totalProgress == null && detail.totalProgress != null) {
           update.totalProgress = detail.totalProgress;
         }
         if (mediaItem.externalScore == null && detail.externalScore != null) {
           update.externalScore = detail.externalScore;
         }
+      } catch (e) {
+        console.error("Failed to fetch media details:", e);
       }
     }
 
-    if (mediaItem.watchSources == null && source === "tmdb") {
-      const tmdbType = mediaItem.type === "MOVIE" ? "movie" : mediaItem.type === "TV_SERIES" ? "tv" : null;
-      if (tmdbType) {
-        const sources = await getTmdbWatchProviders(mediaItem.apiId, tmdbType, mediaItem.title);
-        if (sources.length > 0) {
-          update.watchSources = JSON.stringify(sources);
-        }
+    if (mediaItem.watchSources == null && provider.watchProviders) {
+      const sources = await provider.watchProviders(mediaItem.apiId, mediaType, mediaItem.title);
+      if (sources.length > 0) {
+        update.watchSources = JSON.stringify(sources);
       }
     }
 
@@ -99,33 +85,9 @@ export async function GET(
     await refreshFromSource(userMedia.mediaItem);
 
     return NextResponse.json({
-      userMedia: {
-        id: userMedia.id,
-        status: userMedia.status,
-        rating: userMedia.rating,
-        review: userMedia.review,
-        progress: userMedia.progress,
-        startedAt: userMedia.startedAt,
-        completedAt: userMedia.completedAt,
-        createdAt: userMedia.createdAt,
-        updatedAt: userMedia.updatedAt,
-          mediaItem: {
-            id: userMedia.mediaItem.id,
-            title: userMedia.mediaItem.title,
-            type: userMedia.mediaItem.type,
-            apiId: userMedia.mediaItem.apiId,
-            posterUrl: userMedia.mediaItem.posterUrl,
-            year: userMedia.mediaItem.year,
-            description: userMedia.mediaItem.description,
-            genres: JSON.parse(userMedia.mediaItem.genres),
-            totalProgress: userMedia.mediaItem.totalProgress,
-            externalScore: userMedia.mediaItem.externalScore,
-            apiSource: userMedia.mediaItem.apiSource,
-            watchSources: userMedia.mediaItem.watchSources ? JSON.parse(userMedia.mediaItem.watchSources) : undefined,
-          },
-        },
-      });
-    } catch (error) {
+      userMedia: toUserMediaView(userMedia),
+    });
+  } catch (error) {
       console.error("GET /api/media/[id] error:", error);
       return NextResponse.json({ error: "Failed to fetch media entry" }, { status: 500 });
     }
@@ -170,33 +132,9 @@ export async function GET(
     });
 
     return NextResponse.json({
-      userMedia: {
-        id: userMedia.id,
-        status: userMedia.status,
-        rating: userMedia.rating,
-        review: userMedia.review,
-        progress: userMedia.progress,
-        startedAt: userMedia.startedAt,
-        completedAt: userMedia.completedAt,
-        createdAt: userMedia.createdAt,
-        updatedAt: userMedia.updatedAt,
-          mediaItem: {
-            id: userMedia.mediaItem.id,
-            title: userMedia.mediaItem.title,
-            type: userMedia.mediaItem.type,
-            apiId: userMedia.mediaItem.apiId,
-            posterUrl: userMedia.mediaItem.posterUrl,
-            year: userMedia.mediaItem.year,
-            description: userMedia.mediaItem.description,
-            genres: JSON.parse(userMedia.mediaItem.genres),
-            totalProgress: userMedia.mediaItem.totalProgress,
-            externalScore: userMedia.mediaItem.externalScore,
-            apiSource: userMedia.mediaItem.apiSource,
-            watchSources: userMedia.mediaItem.watchSources ? JSON.parse(userMedia.mediaItem.watchSources) : undefined,
-          },
-        },
-      });
-    } catch (error) {
+      userMedia: toUserMediaView(userMedia),
+    });
+  } catch (error) {
       console.error("PATCH /api/media/[id] error:", error);
       return NextResponse.json({ error: "Failed to update media entry" }, { status: 500 });
     }

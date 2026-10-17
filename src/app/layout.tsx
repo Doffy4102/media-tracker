@@ -1,18 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Poppins, Righteous } from "next/font/google";
 import "./globals.css";
-import Link from "next/link";
-import ThemeToggle from "@/components/ThemeToggle";
-import AuthStatus from "@/components/AuthStatus";
+import NavBar from "@/components/NavBar";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const righteous = Righteous({
+  variable: "--font-righteous",
   subsets: ["latin"],
+  weight: ["400"],
 });
 
 export const metadata: Metadata = {
@@ -28,25 +28,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${poppins.variable} ${righteous.variable} h-full antialiased dark`}
     >
       <body className="min-h-full flex flex-col">
-        <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <span className="font-bold text-lg bg-gradient-to-r from-foreground to-foreground/60 bg-clip-text text-transparent">
-                Media Tracker
-              </span>
-              <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-105">
-                Dashboard
-              </Link>
-            </div>
-            <div className="flex items-center gap-2">
-              <AuthStatus />
-              <ThemeToggle />
-            </div>
-          </div>
-        </nav>
+        <NavBar />
         <div className="flex-1 animate-fade-in">{children}</div>
       </body>
     </html>

@@ -53,6 +53,15 @@ const sortOptions = [
   { value: "dateAdded_asc", label: "Oldest Added" },
 ];
 
+function pageWindow(current: number, total: number): number[] {
+  const span = 5;
+  const end = Math.min(total, Math.max(1, current - 2) + span - 1);
+  const start = Math.max(1, end - span + 1);
+  const pages: number[] = [];
+  for (let i = start; i <= end; i++) pages.push(i);
+  return pages;
+}
+
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabStatus>("ALL");
   const [items, setItems] = useState<DashboardItem[]>([]);
@@ -62,32 +71,9 @@ export default function DashboardPage() {
   const [sortBy, setSortBy] = useState("updatedAt");
   const [typeFilters, setTypeFilters] = useState<string[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
-
-  useEffect(() => {
-    fetch("/api/media")
-      .then((r) => r.json())
-      .then((data) => {
-        const all: DashboardItem[] = data.userMedia || [];
-        const c: Record<string, number> = { ALL: all.length };
-        for (const item of all) {
-          const s = item.status as string;
-          c[s] = (c[s] || 0) + 1;
-        }
-        setCounts(c);
-      })
-      .catch(() => {});
-  }, []);
-
-  const fetchItems = (tab: TabStatus, sort: string, types: string[]) => {
-    const params = new URLSearchParams();
-    if (tab !== "ALL") params.set("status", tab);
-    params.set("sort", sort);
-    if (types.length > 0) params.set("type", types.join(","));
-    fetch(`/api/media?${params}`)
-      .then((r) => r.json())
-      .then((data) => setItems(data.userMedia || []))
-      .catch(console.error);
-  };
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,33 +82,31 @@ export default function DashboardPage() {
     if (activeTab !== "ALL") params.set("status", activeTab);
     params.set("sort", sortBy);
     if (typeFilters.length > 0) params.set("type", typeFilters.join(","));
+    params.set("page", String(page));
     fetch(`/api/media?${params}`)
       .then((r) => r.json())
-      .then((data) => { if (!cancelled) { setItems(data.userMedia || []); setLoading(false); } })
+      .then((data) => {
+        if (cancelled) return;
+        setItems(data.userMedia || []);
+        setCounts(data.counts || {});
+        setTotalPages(data.pagination?.totalPages || 1);
+        setPage(data.pagination?.page || 1);
+        setLoading(false);
+      })
       .catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [activeTab, sortBy, typeFilters]);
+  }, [activeTab, sortBy, typeFilters, page, reloadKey]);
 
   const toggleType = (type: string) => {
+    setPage(1);
     setTypeFilters((prev) =>
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
   };
 
   const refresh = () => {
-    fetchItems(activeTab, sortBy, typeFilters);
-    fetch("/api/media")
-      .then((r) => r.json())
-      .then((data) => {
-        const all: DashboardItem[] = data.userMedia || [];
-        const c: Record<string, number> = { ALL: all.length };
-        for (const item of all) {
-          const s = item.status as string;
-          c[s] = (c[s] || 0) + 1;
-        }
-        setCounts(c);
-      })
-      .catch(() => {});
+    setPage(1);
+    setReloadKey((k) => k + 1);
   };
 
   const tabs: { value: TabStatus; label: string }[] = [
@@ -137,21 +121,22 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
       <header className="sticky top-[3.5rem] z-40 border-b border-border bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Dashboard</h1>
+          <h1 className="font-heading text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">Dashboard</h1>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               onClick={() => setImportOpen(true)}
               className="transition-all duration-200 hover:scale-105 active:scale-[0.97]"
             >
-              <Upload className="h-4 w-4 mr-1" />
-              Import
+              <Upload className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Import</span>
             </Button>
             <Button
               onClick={() => setSearchOpen(true)}
               className="transition-all duration-200 hover:scale-105 active:scale-[0.97]"
             >
-              + Add Media
+              <span className="sm:hidden">+</span>
+              <span className="hidden sm:inline">+ Add Media</span>
             </Button>
           </div>
         </div>
@@ -163,7 +148,7 @@ export default function DashboardPage() {
             {tabs.map((tab) => (
               <button
                 key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
+                onClick={() => { setActiveTab(tab.value); setPage(1); }}
                 className={`relative px-4 py-3 text-sm font-medium whitespace-nowrap transition-all duration-200 ${
                   activeTab === tab.value
                     ? "text-primary"
@@ -184,10 +169,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="border-b border-border bg-background/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Sort by</span>
-            <Select value={sortBy} onValueChange={(v) => { if (v) setSortBy(v); }}>
+            <Select value={sortBy} onValueChange={(v) => { if (v) { setSortBy(v); setPage(1); } }}>
               <SelectTrigger className="h-8 w-44 text-xs transition-all duration-200 focus:ring-2 focus:ring-ring">
                 <SelectValue />
               </SelectTrigger>
@@ -200,15 +185,15 @@ export default function DashboardPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs font-medium text-muted-foreground mr-1">Type</span>
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
+            <span className="text-xs font-medium text-muted-foreground mr-1 shrink-0">Type</span>
             {MediaTypeOptions.map((opt) => {
               const active = typeFilters.includes(opt.value);
               return (
                 <button
                   key={opt.value}
                   onClick={() => toggleType(opt.value)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${
+                  className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 ${
                     active
                       ? "bg-primary text-primary-foreground border-primary shadow-sm"
                       : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
@@ -224,7 +209,7 @@ export default function DashboardPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="space-y-2 animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
                 <div className="aspect-[2/3] bg-muted rounded-xl animate-shimmer rounded-md" />
@@ -242,12 +227,47 @@ export default function DashboardPage() {
             <Button onClick={() => setSearchOpen(true)}>Add your first entry</Button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {items.map((item, i) => (
               <div key={item.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 60}ms` }}>
                 <MediaCard item={item} />
               </div>
             ))}
+          </div>
+        )}
+
+        {!loading && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-1.5 mt-8 flex-wrap animate-fade-in">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Previous
+            </Button>
+            {pageWindow(page, totalPages).map((p) => (
+              <Button
+                key={p}
+                variant={p === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPage(p)}
+                className="min-w-8"
+              >
+                {p}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Next
+            </Button>
+            <span className="text-xs text-muted-foreground ml-2">
+              Page {page} of {totalPages}
+            </span>
           </div>
         )}
       </main>

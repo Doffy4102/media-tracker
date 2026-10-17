@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
 import { parseMalXml } from "@/lib/mal-xml-parser";
 import { mapMalStatus } from "@/lib/mal-status-map";
-import { getJikanDetails } from "@/lib/api/jikan";
+import { providerForType } from "@/lib/media-providers";
 import type { MediaType } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
               } = {};
 
               try {
-                const detail = await getJikanDetails(entry.type, String(entry.malId));
+                const detail = await providerForType(mediaType).details(String(entry.malId), mediaType);
                 enriched = {
                   posterUrl: detail.posterUrl,
                   genres: detail.genres,
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
                   title: entry.title,
                   type: mediaType,
                   apiId: String(entry.malId),
-                  apiSource: "jikan",
+                  apiSource: "mal",
                   posterUrl: enriched.posterUrl ?? null,
                   genres: JSON.stringify(enriched.genres ?? []),
                   description: enriched.description ?? null,

@@ -1,3 +1,5 @@
+import type { MediaProvider } from "@/lib/types";
+
 const RAWG_BASE = "https://api.rawg.io/api";
 
 function getRawgKey(): string {
@@ -23,7 +25,7 @@ interface RawgSearchResponse {
   results: RawgGame[];
 }
 
-export async function searchGames(query: string) {
+async function searchGames(query: string) {
   const key = getRawgKey();
   const res = await fetch(
     `${RAWG_BASE}/games?key=${key}&search=${encodeURIComponent(query)}&page_size=20`,
@@ -48,7 +50,7 @@ export async function searchGames(query: string) {
   }));
 }
 
-export async function getGameDetails(id: string) {
+async function getGameDetails(id: string) {
   const key = getRawgKey();
   const res = await fetch(`${RAWG_BASE}/games/${id}?key=${key}`, {
     next: { revalidate: 86400 },
@@ -71,3 +73,13 @@ export async function getGameDetails(id: string) {
     externalScore: item.metacritic ?? item.rating ?? undefined,
   };
 }
+
+export const gamesProvider: MediaProvider = {
+  source: "rawg",
+  search(query) {
+    return searchGames(query);
+  },
+  details(apiId) {
+    return getGameDetails(apiId);
+  },
+};

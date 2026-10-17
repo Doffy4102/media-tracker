@@ -10,25 +10,25 @@ function getStatusStyle(status: string) {
   switch (status) {
     case "WATCHING":
       return {
-        bg: "bg-blue-500/90",
-        border: "border-blue-400/60",
+        bg: "bg-purple-600/90",
+        border: "border-purple-400/60",
         text: "text-white",
       };
     case "COMPLETED":
       return {
-        bg: "bg-green-500/90",
-        border: "border-green-400/60",
+        bg: "bg-emerald-600/90",
+        border: "border-emerald-400/60",
         text: "text-white",
       };
     case "PLANTOWATCH":
       return {
-        bg: "bg-amber-500/90",
+        bg: "bg-amber-600/90",
         border: "border-amber-400/60",
         text: "text-white",
       };
     case "DROPPED":
       return {
-        bg: "bg-red-500/90",
+        bg: "bg-red-600/90",
         border: "border-red-400/60",
         text: "text-white",
       };

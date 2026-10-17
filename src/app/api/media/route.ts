@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { UserStatus } from "@/lib/types";
 import { verifySession } from "@/lib/dal";
-import { getTmdbWatchProviders } from "@/lib/api/tmdb";
+import { providerForSource } from "@/lib/media-providers";
+import { toUserMediaView } from "@/lib/media-view";
+import { listUserMedia } from "@/lib/user-media";
+import type { MediaType } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
   const session = await verifySession();
@@ -14,80 +17,23 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") as UserStatus | null;
     const type = searchParams.get("type");
-    const sort = searchParams.get("sort") as string | null;
+    const sort = searchParams.get("sort");
+    const pageParam = searchParams.get("page");
+    const pageSizeParam = searchParams.get("pageSize");
 
-    const where: Record<string, unknown> = { userId: session.userId };
-    if (status) where.status = status;
-    if (type) {
-      const types = type.split(",");
-      where.mediaItem = types.length === 1 ? { type: types[0] } : { type: { in: types } };
-    }
-
-    let orderBy: Record<string, unknown> = {};
-    switch (sort) {
-      case "title":
-        orderBy.mediaItem = { title: "asc" };
-        break;
-      case "year":
-        orderBy.mediaItem = { year: "desc" };
-        break;
-      case "rating":
-        orderBy = { rating: "desc" };
-        break;
-      case "rating_asc":
-        orderBy = { rating: "asc" };
-        break;
-      case "progress":
-        orderBy = { progress: "desc" };
-        break;
-      case "dateAdded":
-        orderBy = { createdAt: "desc" };
-        break;
-      case "title_desc":
-        orderBy.mediaItem = { title: "desc" };
-        break;
-      case "year_asc":
-        orderBy.mediaItem = { year: "asc" };
-        break;
-      case "dateAdded_asc":
-        orderBy = { createdAt: "asc" };
-        break;
-      default:
-        orderBy.updatedAt = "desc";
-    }
-
-    const userMedia = await prisma.userMedia.findMany({
-      where,
-      include: { mediaItem: true },
-      orderBy,
+    const { items, pagination, counts } = await listUserMedia({
+      userId: session.userId,
+      status,
+      types: type ? type.split(",") : undefined,
+      sort,
+      page: pageParam ? Number(pageParam) : undefined,
+      pageSize: pageSizeParam ? Number(pageSizeParam) : undefined,
     });
 
     return NextResponse.json({
-      userMedia: userMedia.map((um) => ({
-        id: um.id,
-        status: um.status,
-        rating: um.rating,
-        review: um.review,
-        progress: um.progress,
-        startedAt: um.startedAt,
-        completedAt: um.completedAt,
-        createdAt: um.createdAt,
-        updatedAt: um.updatedAt,
-        mediaItem: {
-          id: um.mediaItem.id,
-          title: um.mediaItem.title,
-          type: um.mediaItem.type,
-          apiId: um.mediaItem.apiId,
-          posterUrl: um.mediaItem.posterUrl,
-          year: um.mediaItem.year,
-          description: um.mediaItem.description,
-          genres: JSON.parse(um.mediaItem.genres),
-          totalProgress: um.mediaItem.totalProgress,
-          externalScore: um.mediaItem.externalScore,
-          apiSource: um.mediaItem.apiSource,
-          watchSources: um.mediaItem.watchSources ? JSON.parse(um.mediaItem.watchSources) : undefined,
-        },
-      })),
+      userMedia: items,
+      pagination,
+      counts,
     });
   } catch (error) {
     console.error("GET /api/media error:", error);
@@ -141,20 +87,24 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (data.apiSource === "tmdb" && !mediaItem.watchSources) {
-      try {
-        const tmdbType = data.type === "MOVIE" ? "movie" : data.type === "TV_SERIES" ? "tv" : null;
-        if (tmdbType) {
-          const sources = await getTmdbWatchProviders(data.apiId, tmdbType, data.title);
+    if (!mediaItem.watchSources) {
+      const provider = providerForSource(data.apiSource);
+      if (provider?.watchProviders) {
+        try {
+          const sources = await provider.watchProviders(
+            data.apiId,
+            data.type as MediaType,
+            data.title,
+          );
           if (sources.length > 0) {
             await prisma.mediaItem.update({
               where: { id: mediaItem.id },
               data: { watchSources: JSON.stringify(sources) },
             });
           }
+        } catch (e) {
+          console.error("Failed to fetch watch providers:", e);
         }
-      } catch (e) {
-        console.error("Failed to fetch watch providers:", e);
       }
     }
 
@@ -164,29 +114,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUserMedia) {
       return NextResponse.json({
-        userMedia: {
-          id: existingUserMedia.id,
-          status: existingUserMedia.status,
-          rating: existingUserMedia.rating,
-          review: existingUserMedia.review,
-          progress: existingUserMedia.progress,
-          startedAt: existingUserMedia.startedAt,
-          completedAt: existingUserMedia.completedAt,
-          createdAt: existingUserMedia.createdAt,
-          updatedAt: existingUserMedia.updatedAt,
-          mediaItem: {
-            id: mediaItem.id,
-            title: mediaItem.title,
-            type: mediaItem.type,
-            apiId: mediaItem.apiId,
-            posterUrl: mediaItem.posterUrl,
-            year: mediaItem.year,
-            description: mediaItem.description,
-            genres: JSON.parse(mediaItem.genres),
-            totalProgress: mediaItem.totalProgress,
-            watchSources: mediaItem.watchSources ? JSON.parse(mediaItem.watchSources) : undefined,
-          },
-        },
+        userMedia: toUserMediaView({ ...existingUserMedia, mediaItem }),
       });
     }
 
@@ -199,33 +127,9 @@ export async function POST(request: NextRequest) {
       include: { mediaItem: true },
     });
 
-    return NextResponse.json(
-      {
-        userMedia: {
-          id: userMedia.id,
-          status: userMedia.status,
-          rating: userMedia.rating,
-          review: userMedia.review,
-          progress: userMedia.progress,
-          startedAt: userMedia.startedAt,
-          completedAt: userMedia.completedAt,
-          createdAt: userMedia.createdAt,
-          updatedAt: userMedia.updatedAt,
-          mediaItem: {
-            id: userMedia.mediaItem.id,
-            title: userMedia.mediaItem.title,
-            type: userMedia.mediaItem.type,
-            apiId: userMedia.mediaItem.apiId,
-            posterUrl: userMedia.mediaItem.posterUrl,
-            year: userMedia.mediaItem.year,
-            description: userMedia.mediaItem.description,
-            genres: JSON.parse(userMedia.mediaItem.genres),
-            totalProgress: userMedia.mediaItem.totalProgress,
-            watchSources: userMedia.mediaItem.watchSources ? JSON.parse(userMedia.mediaItem.watchSources) : undefined,
-          },
-        },
-      },
-    );
+    return NextResponse.json({
+      userMedia: toUserMediaView(userMedia),
+    });
   } catch (error) {
     console.error("POST /api/media error:", error);
     return NextResponse.json({ error: "Failed to create media entry" }, { status: 500 });

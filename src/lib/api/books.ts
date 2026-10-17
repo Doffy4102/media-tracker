@@ -1,10 +1,12 @@
+import type { MediaProvider } from "@/lib/types";
+
 const GOOGLE_BOOKS_BASE = "https://www.googleapis.com/books/v1";
 
 function getBooksKey(): string | undefined {
   return process.env.GOOGLE_BOOKS_API_KEY;
 }
 
-export async function searchBooks(query: string) {
+async function searchBooks(query: string) {
   const key = getBooksKey();
   const url = `${GOOGLE_BOOKS_BASE}/volumes?q=${encodeURIComponent(query)}&maxResults=20${key ? `&key=${key}` : ""}`;
   const res = await fetch(url, { next: { revalidate: 3600 } });
@@ -32,7 +34,7 @@ export async function searchBooks(query: string) {
   });
 }
 
-export async function getBooksDetails(id: string) {
+async function getBooksDetails(id: string) {
   const key = getBooksKey();
   const url = `${GOOGLE_BOOKS_BASE}/volumes/${id}${key ? `?key=${key}` : ""}`;
   const res = await fetch(url, { next: { revalidate: 86400 } });
@@ -57,3 +59,13 @@ export async function getBooksDetails(id: string) {
     totalProgress: (info.pageCount as number) ?? undefined,
   };
 }
+
+export const booksProvider: MediaProvider = {
+  source: "google_books",
+  search(query) {
+    return searchBooks(query);
+  },
+  details(apiId) {
+    return getBooksDetails(apiId);
+  },
+};

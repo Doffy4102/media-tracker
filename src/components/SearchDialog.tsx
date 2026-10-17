@@ -215,7 +215,7 @@ export default function SearchDialog({
         ) : (
           <>
             <div className="space-y-3">
-              <h2 className="text-lg font-semibold">Add Media</h2>
+              <h2 className="font-heading text-lg font-semibold">Add Media</h2>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -226,14 +226,14 @@ export default function SearchDialog({
                   className="pl-9"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
                 {(["ALL", "ANIME", "MANGA", "MOVIE", "TV_SERIES", "BOOK", "GAME"] as const).map((t) => (
                   <Button
                     key={t}
                     variant={selectedType === t ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSelectedType(t)}
-                    className="text-xs"
+                    className="shrink-0 text-xs"
                   >
                     {t === "ALL" ? "All" : MediaTypeLabels[t as MediaType] || t}
                   </Button>
@@ -248,7 +248,7 @@ export default function SearchDialog({
               ) : results.length === 0 && query.length >= 2 ? (
                 <p className="text-center text-sm text-muted-foreground py-8 animate-fade-in">No results found</p>
               ) : (
-                <div className="grid grid-cols-2 gap-3 p-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-1">
                   {results.map((result, i) => (
                     <button
                       key={result.id as string}

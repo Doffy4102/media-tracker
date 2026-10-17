@@ -1,3 +1,5 @@
+import type { MediaProvider, WatchSource } from "@/lib/types";
+
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const IMAGE_BASE = "https://image.tmdb.org/t/p/w780";
 
@@ -130,7 +132,7 @@ const PROVIDER_URLS: Record<string, (title: string) => string> = {
   "Freevee": (t) => `https://www.amazon.com/s?k=${encodeURIComponent(t)}&i=instant-video`,
 };
 
-export async function getTmdbWatchProviders(apiId: string, type: "movie" | "tv", title?: string): Promise<import("@/lib/types").WatchSource[]> {
+async function getTmdbWatchProviders(apiId: string, type: "movie" | "tv", title?: string): Promise<WatchSource[]> {
   const key = getTmdbKey();
   const endpoint = type === "movie" ? "movie" : "tv";
   const res = await fetch(
@@ -145,7 +147,7 @@ export async function getTmdbWatchProviders(apiId: string, type: "movie" | "tv",
 
   const fallbackUrl = region.link ?? `https://www.themoviedb.org/${endpoint}/${apiId}/watch`;
 
-  const sources: import("@/lib/types").WatchSource[] = [];
+  const sources: WatchSource[] = [];
   const categories: Array<{ key: "flatrate" | "rent" | "buy" | "free"; label: string }> = [
     { key: "flatrate", label: "Stream" },
     { key: "rent", label: "Rent" },
@@ -170,7 +172,7 @@ export async function getTmdbWatchProviders(apiId: string, type: "movie" | "tv",
   return sources;
 }
 
-export async function searchTmdb(query: string, type: "movie" | "tv") {
+async function searchTmdb(query: string, type: "movie" | "tv") {
   const key = getTmdbKey();
   const endpoint = type === "movie" ? "search/movie" : "search/tv";
   const res = await fetch(
@@ -196,7 +198,7 @@ export async function searchTmdb(query: string, type: "movie" | "tv") {
   }));
 }
 
-export async function getTmdbDetails(id: string, type: "movie" | "tv") {
+async function getTmdbDetails(id: string, type: "movie" | "tv") {
   const key = getTmdbKey();
   const endpoint = type === "movie" ? "movie" : "tv";
   const res = await fetch(`${TMDB_BASE}/${endpoint}/${id}?api_key=${key}`, {
@@ -222,3 +224,16 @@ export async function getTmdbDetails(id: string, type: "movie" | "tv") {
     totalProgress: type === "tv" ? (tvData?.number_of_episodes ?? undefined) : undefined,
   };
 }
+
+export const tmdbProvider: MediaProvider = {
+  source: "tmdb",
+  search(query, type) {
+    return searchTmdb(query, type === "MOVIE" ? "movie" : "tv");
+  },
+  details(apiId, type) {
+    return getTmdbDetails(apiId, type === "MOVIE" ? "movie" : "tv");
+  },
+  watchProviders(apiId, type, title) {
+    return getTmdbWatchProviders(apiId, type === "MOVIE" ? "movie" : "tv", title);
+  },
+};

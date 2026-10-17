@@ -14,7 +14,7 @@ export default function RegisterPage() {
     <div className="min-h-[calc(100vh-3.5rem)] flex items-center justify-center bg-gradient-to-b from-background via-background to-muted/30 px-4">
       <Card className="w-full max-w-sm animate-scale-in border-border/50 shadow-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Create account</CardTitle>
+          <CardTitle className="font-heading text-2xl">Create account</CardTitle>
           <CardDescription>Track your media across categories</CardDescription>
         </CardHeader>
         <CardContent>
