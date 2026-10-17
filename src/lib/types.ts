@@ -32,6 +32,24 @@ export interface MediaSearchResult {
   externalScore?: number;
 }
 
+export interface ShowcaseItem extends MediaSearchResult {
+  backdropUrl?: string;
+  libraryId?: string;
+}
+
+export interface ShowcaseRow {
+  key: string;
+  title: string;
+  type: MediaType;
+  items: ShowcaseItem[];
+}
+
+export interface Showcase {
+  hero?: ShowcaseItem;
+  recent?: ShowcaseItem[];
+  rows: ShowcaseRow[];
+}
+
 export interface MediaProvider {
   readonly source: string;
   search(query: string, type: MediaType): Promise<MediaSearchResult[]>;
