@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "cdn.myanimelist.net" },
       { protocol: "https", hostname: "books.google.com" },
       { protocol: "https", hostname: "image.tmdb.org" },
+      { protocol: "https", hostname: "images.igdb.com" },
       { protocol: "https", hostname: "media.rawg.io" },
     ],
   },

@@ -1,4 +1,5 @@
 import { fetchJson } from "@/lib/api/http";
+import { findGameArt } from "@/lib/api/igdb";
 import type { MediaType, Showcase, ShowcaseItem, ShowcaseRow } from "@/lib/types";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -180,6 +181,7 @@ function mapRawgGame(game: RawgGame): ShowcaseItem {
     type: "GAME",
     apiId: String(game.id),
     posterUrl: game.background_image ?? undefined,
+    backdropUrl: game.background_image ?? undefined,
     year: parseYear(game.released),
     genres: game.genres?.map((genre) => genre.name) ?? [],
     description: undefined,
@@ -189,15 +191,25 @@ function mapRawgGame(game: RawgGame): ShowcaseItem {
   };
 }
 
+async function withGameArt(item: ShowcaseItem): Promise<ShowcaseItem> {
+  const art = await findGameArt(item.title);
+  return {
+    ...item,
+    posterUrl: art.posterUrl ?? item.posterUrl,
+    backdropUrl: art.backdropUrl ?? item.backdropUrl,
+  };
+}
+
 async function topGames(): Promise<ShowcaseItem[]> {
   const data = await fetchJson<{ results: RawgGame[] }>(
     `${RAWG_BASE}/games?key=${requireEnv("RAWG_API_KEY")}&ordering=-added&page_size=${ROW_LIMIT}`,
     { revalidate: 3600, label: "RAWG top games" },
   );
-  return (data.results ?? [])
+  const items = (data.results ?? [])
     .filter((game) => Boolean(game.background_image))
     .slice(0, ROW_LIMIT)
     .map(mapRawgGame);
+  return Promise.all(items.map(withGameArt));
 }
 
 // --- Hero -----------------------------------------------------------------

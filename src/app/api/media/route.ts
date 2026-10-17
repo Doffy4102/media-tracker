@@ -5,6 +5,12 @@ import { verifySession } from "@/lib/dal";
 import { providerForSource } from "@/lib/media-providers";
 import { toUserMediaView } from "@/lib/media-view";
 import { listUserMedia } from "@/lib/user-media";
+import {
+  DEFAULT_STATUS_BY_MEDIA_TYPE,
+  isMediaType,
+  isStatusAllowedForMediaType,
+  isUserStatus,
+} from "@/lib/constants";
 import type { MediaType } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
@@ -15,7 +21,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status") as UserStatus | null;
+    const statusParam = searchParams.get("status");
+    const status = statusParam === null ? null : (statusParam as UserStatus);
+    if (statusParam !== null && !isUserStatus(statusParam)) {
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    }
     const type = searchParams.get("type");
     const sort = searchParams.get("sort");
     const pageParam = searchParams.get("page");
@@ -53,6 +63,21 @@ export async function POST(request: NextRequest) {
 
     if (!data) {
       return NextResponse.json({ error: "Missing data" }, { status: 400 });
+    }
+
+    if (typeof data.type !== "string" || !isMediaType(data.type)) {
+      return NextResponse.json({ error: "Invalid media type" }, { status: 400 });
+    }
+    const mediaType = data.type as MediaType;
+    const status = data.status ?? DEFAULT_STATUS_BY_MEDIA_TYPE[mediaType];
+    if (typeof status !== "string" || !isUserStatus(status)) {
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    }
+    if (!isStatusAllowedForMediaType(mediaType, status)) {
+      return NextResponse.json(
+        { error: `Status not allowed for ${mediaType}` },
+        { status: 400 },
+      );
     }
 
     const mediaItem = await prisma.mediaItem.upsert({
@@ -122,7 +147,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: session.userId,
         mediaItemId: mediaItem.id,
-        status: data.status || "PLANTOWATCH",
+        status,
       },
       include: { mediaItem: true },
     });

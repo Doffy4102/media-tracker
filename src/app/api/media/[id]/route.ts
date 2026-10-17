@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { verifySession } from "@/lib/dal";
-import { providerForSource } from "@/lib/media-providers";
+import { refreshFromSource } from "@/lib/media-refresh";
 import { toUserMediaView } from "@/lib/media-view";
-import type { MediaType } from "@/lib/types";
+import { isStatusAllowedForMediaType, isUserStatus } from "@/lib/constants";
+import type { UserStatus } from "@/lib/types";
 
 async function getUserMediaOrNotFound(id: string, userId: string) {
   const userMedia = await prisma.userMedia.findFirst({
@@ -11,58 +12,6 @@ async function getUserMediaOrNotFound(id: string, userId: string) {
     include: { mediaItem: true },
   });
   return userMedia;
-}
-
-async function refreshFromSource(mediaItem: {
-  id: string;
-  title: string;
-  apiId: string;
-  apiSource: string | null;
-  type: string;
-  totalProgress: number | null;
-  externalScore: number | null;
-  watchSources: string | null;
-}) {
-  if (mediaItem.totalProgress != null && mediaItem.externalScore != null && mediaItem.watchSources != null) return;
-
-  const provider = providerForSource(mediaItem.apiSource);
-  if (!provider) return;
-
-  const mediaType = mediaItem.type as MediaType;
-
-  try {
-    const update: Record<string, unknown> = {};
-
-    if (mediaItem.totalProgress == null || mediaItem.externalScore == null) {
-      try {
-        const detail = await provider.details(mediaItem.apiId, mediaType);
-        if (mediaItem.totalProgress == null && detail.totalProgress != null) {
-          update.totalProgress = detail.totalProgress;
-        }
-        if (mediaItem.externalScore == null && detail.externalScore != null) {
-          update.externalScore = detail.externalScore;
-        }
-      } catch (e) {
-        console.error("Failed to fetch media details:", e);
-      }
-    }
-
-    if (mediaItem.watchSources == null && provider.watchProviders) {
-      const sources = await provider.watchProviders(mediaItem.apiId, mediaType, mediaItem.title);
-      if (sources.length > 0) {
-        update.watchSources = JSON.stringify(sources);
-      }
-    }
-
-    if (Object.keys(update).length > 0) {
-      await prisma.mediaItem.update({
-        where: { id: mediaItem.id },
-        data: update,
-      });
-    }
-  } catch (e) {
-    console.error("Failed to refresh media details:", e);
-  }
 }
 
 export async function GET(
@@ -111,6 +60,18 @@ export async function GET(
 
     const body = await request.json();
     const { status, rating, review, progress, startedAt, completedAt } = body;
+
+    if (status !== undefined) {
+      if (typeof status !== "string" || !isUserStatus(status)) {
+        return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+      }
+      if (!isStatusAllowedForMediaType(existing.mediaItem.type, status as UserStatus)) {
+        return NextResponse.json(
+          { error: `Status not allowed for ${existing.mediaItem.type}` },
+          { status: 400 },
+        );
+      }
+    }
 
     const data: Record<string, unknown> = {
       ...(status && { status }),

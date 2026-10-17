@@ -45,27 +45,13 @@ function PosterContent({ item }: { item: ShowcaseItem }) {
   );
 }
 
-export default function PosterTile({
-  item,
-  onSelect,
-}: {
-  item: ShowcaseItem;
-  onSelect: (item: ShowcaseItem) => void;
-}) {
-  const className =
-    "group relative block aspect-[2/3] w-32 flex-shrink-0 snap-start overflow-hidden rounded-xl bg-muted text-left shadow-sm ring-1 ring-border/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:ring-primary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:w-36 md:w-40";
-
-  if (item.libraryId) {
-    return (
-      <Link href={`/media/${item.libraryId}`} className={className}>
-        <PosterContent item={item} />
-      </Link>
-    );
-  }
-
+export default function PosterTile({ item }: { item: ShowcaseItem }) {
   return (
-    <button type="button" onClick={() => onSelect(item)} className={className}>
+    <Link
+      href={`/media/${item.type}/${encodeURIComponent(item.apiId)}`}
+      className="group relative block aspect-[2/3] w-32 flex-shrink-0 snap-start overflow-hidden rounded-xl bg-muted text-left shadow-sm ring-1 ring-border/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:ring-primary/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:w-36 md:w-40"
+    >
       <PosterContent item={item} />
-    </button>
+    </Link>
   );
 }

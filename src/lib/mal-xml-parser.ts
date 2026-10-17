@@ -87,7 +87,7 @@ export function parseMalXml(xml: string): MalEntry[] {
         totalEpisodes,
         userProgress,
         userScore: rawScore === 0 ? null : rawScore,
-        status: String(item.my_status ?? "Plan to Watch"),
+        status: String(item.my_status ?? ""),
         startDate: parseMalDate(item.my_start_date as string | undefined),
         finishDate: parseMalDate(item.my_finish_date as string | undefined),
         type: (isAnime ? "anime" : "manga") as "anime" | "manga",

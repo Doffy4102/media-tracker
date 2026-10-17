@@ -9,12 +9,10 @@ export default function MediaRow({
   title,
   items,
   index,
-  onSelect,
 }: {
   title: string;
   items: ShowcaseItem[];
   index: number;
-  onSelect: (item: ShowcaseItem) => void;
 }) {
   const scroller = useRef<HTMLDivElement>(null);
 
@@ -56,7 +54,7 @@ export default function MediaRow({
         className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 scrollbar-none sm:mx-0 sm:px-0"
       >
         {items.map((item) => (
-          <PosterTile key={item.id} item={item} onSelect={onSelect} />
+          <PosterTile key={item.id} item={item} />
         ))}
       </div>
     </section>

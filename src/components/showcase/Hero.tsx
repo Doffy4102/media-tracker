@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Info, Plus, Star } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Info, Star } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MediaTypeLabels } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -12,13 +12,12 @@ import type { ShowcaseItem } from "@/lib/types";
 export default function Hero({
   item,
   isAuthed,
-  onSelect,
 }: {
   item: ShowcaseItem;
   isAuthed: boolean;
-  onSelect: (item: ShowcaseItem) => void;
 }) {
   const background = item.backdropUrl ?? item.posterUrl;
+  const href = `/media/${item.type}/${encodeURIComponent(item.apiId)}`;
 
   return (
     <section className="relative h-[65vh] min-h-[440px] w-full overflow-hidden sm:h-[75vh]">
@@ -63,20 +62,13 @@ export default function Hero({
         )}
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          {item.libraryId ? (
-            <Link href={`/media/${item.libraryId}`} className={cn(buttonVariants({ size: "lg" }))}>
-              View in Library
-            </Link>
-          ) : (
-            <Button size="lg" onClick={() => onSelect(item)}>
-              <Plus />
-              {isAuthed ? "Add to Library" : "Sign in to add"}
-            </Button>
-          )}
-          <Button size="lg" variant="outline" onClick={() => onSelect(item)}>
+          <Link href={href} className={cn(buttonVariants({ size: "lg" }))}>
+            {item.libraryId ? "View in Library" : isAuthed ? "Add to Library" : "Sign in to add"}
+          </Link>
+          <Link href={href} className={cn(buttonVariants({ size: "lg", variant: "outline" }))}>
             <Info />
             More info
-          </Button>
+          </Link>
         </div>
       </div>
     </section>

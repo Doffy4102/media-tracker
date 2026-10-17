@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
               return;
             }
 
-            const status = mapMalStatus(entry.status);
+            const status = mapMalStatus(entry.status, mediaType);
 
             await prisma.userMedia.create({
               data: {

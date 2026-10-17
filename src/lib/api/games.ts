@@ -1,3 +1,4 @@
+import { findGameArt } from "@/lib/api/igdb";
 import type { MediaProvider } from "@/lib/types";
 
 const RAWG_BASE = "https://api.rawg.io/api";
@@ -34,20 +35,25 @@ async function searchGames(query: string) {
   if (!res.ok) throw new Error("RAWG API error");
   const data: RawgSearchResponse = await res.json();
 
-  return (data.results || []).map((item) => ({
-    id: `rawg_${item.id}`,
-    title: item.name,
-    type: "GAME" as const,
-    apiId: String(item.id),
-    posterUrl: item.background_image ?? undefined,
-    year: item.released ? parseInt(item.released.slice(0, 4)) : undefined,
-    genres: item.genres?.map((g) => g.name) ?? [],
-    description: item.description_raw ?? undefined,
-    apiSource: "rawg" as const,
-    externalUrl: `https://rawg.io/games/${item.slug}`,
-    totalProgress: item.playtime ?? undefined,
-    externalScore: item.metacritic ?? item.rating ?? undefined,
-  }));
+  return Promise.all(
+    (data.results || []).map(async (item) => {
+      const art = await findGameArt(item.name);
+      return {
+        id: `rawg_${item.id}`,
+        title: item.name,
+        type: "GAME" as const,
+        apiId: String(item.id),
+        posterUrl: art.posterUrl ?? item.background_image ?? undefined,
+        year: item.released ? parseInt(item.released.slice(0, 4)) : undefined,
+        genres: item.genres?.map((g) => g.name) ?? [],
+        description: item.description_raw ?? undefined,
+        apiSource: "rawg" as const,
+        externalUrl: `https://rawg.io/games/${item.slug}`,
+        totalProgress: item.playtime ?? undefined,
+        externalScore: item.metacritic ?? item.rating ?? undefined,
+      };
+    }),
+  );
 }
 
 async function getGameDetails(id: string) {
@@ -57,13 +63,14 @@ async function getGameDetails(id: string) {
   });
   if (!res.ok) throw new Error("RAWG API error");
   const item: RawgGame = await res.json();
+  const art = await findGameArt(item.name);
 
   return {
     id: `rawg_${item.id}`,
     title: item.name,
     type: "GAME" as const,
     apiId: String(item.id),
-    posterUrl: item.background_image ?? undefined,
+    posterUrl: art.posterUrl ?? item.background_image ?? undefined,
     year: item.released ? parseInt(item.released.slice(0, 4)) : undefined,
     genres: item.genres?.map((g) => g.name) ?? [],
     description: item.description_raw ?? undefined,

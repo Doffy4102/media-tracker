@@ -84,3 +84,9 @@ export interface UserMediaView {
   updatedAt: Date;
   mediaItem: MediaItemView;
 }
+
+export interface MediaPageData {
+  mediaItem: MediaItemView;
+  userMedia: UserMediaView | null;
+  authed: boolean;
+}

@@ -5,10 +5,13 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { MediaTypeLabels, UserStatusLabels } from "@/lib/constants";
+import type { UserStatus } from "@/lib/types";
 
 function getStatusStyle(status: string) {
   switch (status) {
     case "WATCHING":
+    case "READING":
+    case "PLAYING":
       return {
         bg: "bg-purple-600/90",
         border: "border-purple-400/60",
@@ -21,6 +24,8 @@ function getStatusStyle(status: string) {
         text: "text-white",
       };
     case "PLANTOWATCH":
+    case "PLANTOREAD":
+    case "PLANTOPLAY":
       return {
         bg: "bg-amber-600/90",
         border: "border-amber-400/60",
@@ -72,7 +77,7 @@ export default function MediaCard({ item }: { item: UserMediaItemShape }) {
   const showProgress = total != null && total > 0;
 
   return (
-    <Link href={`/media/${item.id}`}>
+    <Link href={`/media/${mediaItem.type}/${encodeURIComponent(mediaItem.apiId ?? "")}`}>
       <Card className="group relative overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1.5 active:scale-[0.98]">
         <div className="absolute -inset-px rounded-xl bg-gradient-to-b from-primary/20 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
         <div className="relative aspect-[2/3] bg-muted overflow-hidden">
@@ -101,7 +106,7 @@ export default function MediaCard({ item }: { item: UserMediaItemShape }) {
                 variant="outline"
                 className={`text-xs font-semibold border backdrop-blur-sm ${style.bg} ${style.text} ${style.border} shadow-sm`}
               >
-                {UserStatusLabels[status] || status}
+                {UserStatusLabels[status as UserStatus] || status}
               </Badge>
             )}
           </div>

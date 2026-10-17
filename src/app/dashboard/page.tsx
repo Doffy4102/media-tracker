@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MediaCard from "@/components/MediaCard";
 import SearchDialog from "@/components/SearchDialog";
 import MalImportDialog from "@/components/MalImportDialog";
@@ -12,10 +12,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MediaTypeOptions } from "@/lib/constants";
+import {
+  MediaTypeOptions,
+  UserStatusOptionsByMediaType,
+  isMediaType,
+} from "@/lib/constants";
+import type { MediaType, UserStatus } from "@/lib/types";
 import { Upload } from "lucide-react";
 
-type TabStatus = "PLANTOWATCH" | "WATCHING" | "COMPLETED" | "DROPPED" | "ALL";
+type TabStatus = UserStatus | "ALL";
 
 interface MediaItemShape {
   id: string;
@@ -62,6 +67,23 @@ function pageWindow(current: number, total: number): number[] {
   return pages;
 }
 
+function visibleStatusOptions(typeFilters: string[]): { value: UserStatus; label: string }[] {
+  const selectedTypes = typeFilters.filter(isMediaType) as MediaType[];
+  const options =
+    selectedTypes.length === 0
+      ? (Object.values(UserStatusOptionsByMediaType) as { value: UserStatus; label: string }[][]).flat()
+      : selectedTypes.flatMap((t) => UserStatusOptionsByMediaType[t]);
+  const seen = new Set<UserStatus>();
+  const result: { value: UserStatus; label: string }[] = [];
+  for (const option of options) {
+    if (!seen.has(option.value)) {
+      seen.add(option.value);
+      result.push(option);
+    }
+  }
+  return result;
+}
+
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabStatus>("ALL");
   const [items, setItems] = useState<DashboardItem[]>([]);
@@ -99,9 +121,13 @@ export default function DashboardPage() {
 
   const toggleType = (type: string) => {
     setPage(1);
-    setTypeFilters((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
-    );
+    const next = typeFilters.includes(type)
+      ? typeFilters.filter((t) => t !== type)
+      : [...typeFilters, type];
+    setTypeFilters(next);
+    if (activeTab !== "ALL" && !visibleStatusOptions(next).some((s) => s.value === activeTab)) {
+      setActiveTab("ALL");
+    }
   };
 
   const refresh = () => {
@@ -109,13 +135,10 @@ export default function DashboardPage() {
     setReloadKey((k) => k + 1);
   };
 
-  const tabs: { value: TabStatus; label: string }[] = [
-    { value: "ALL", label: "All" },
-    { value: "PLANTOWATCH", label: "Plan to Watch" },
-    { value: "WATCHING", label: "Watching" },
-    { value: "COMPLETED", label: "Completed" },
-    { value: "DROPPED", label: "Dropped" },
-  ];
+  const tabs: { value: TabStatus; label: string }[] = useMemo(
+    () => [{ value: "ALL" as TabStatus, label: "All" }, ...visibleStatusOptions(typeFilters)],
+    [typeFilters]
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
@@ -272,7 +295,7 @@ export default function DashboardPage() {
         )}
       </main>
 
-      <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} onAdd={refresh} />
+      <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
       <MalImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={refresh} />
     </div>
   );
