@@ -17,6 +17,12 @@ export interface DefaultSite {
   searchUrl: (title: string) => string;
 }
 
+export interface OfficialPlatform {
+  name: string;
+  kind: "STREAM" | "READ" | "BUY" | "PLAY";
+  searchUrl: (title: string) => string;
+}
+
 export interface MediaSearchResult {
   id: string;
   title: string;

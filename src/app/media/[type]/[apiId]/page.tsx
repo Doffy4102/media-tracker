@@ -15,6 +15,8 @@ import {
   MediaTypeLabels,
   UserStatusOptionsByMediaType,
   DEFAULT_STATUS_BY_MEDIA_TYPE,
+  OfficialPlatformsByMediaType,
+  PlatformSectionLabelByMediaType,
   DEFAULT_STREAMING_SITES,
 } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -81,6 +83,12 @@ export default function MediaPage({
   const statusOptions = media
     ? UserStatusOptionsByMediaType[media.type as MediaType]
     : [];
+  const officialPlatforms = media
+    ? OfficialPlatformsByMediaType[media.type as MediaType]
+    : [];
+  const officialSectionLabel = media
+    ? PlatformSectionLabelByMediaType[media.type as MediaType]
+    : "";
 
   const add = async () => {
     if (!media || adding) return;
@@ -261,6 +269,29 @@ export default function MediaPage({
                       {ws.name}
                       <span className="text-[10px] uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">
                         {ws.type === "flatrate" ? "Stream" : ws.type === "rent" ? "Rent" : ws.type === "buy" ? "Buy" : "Free"}
+                      </span>
+                      <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {officialPlatforms.length > 0 && (
+              <div className="animate-fade-in-up stagger-2">
+                <h3 className="text-sm font-medium mb-3">{officialSectionLabel}</h3>
+                <div className="flex flex-wrap gap-2">
+                  {officialPlatforms.map((site) => (
+                    <a
+                      key={site.name}
+                      href={site.searchUrl(media.title)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground transition-all duration-200 hover:bg-muted hover:border-foreground/20 hover:shadow-sm active:scale-[0.97]"
+                    >
+                      {site.name}
+                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">
+                        {site.kind}
                       </span>
                       <ExternalLink className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
                     </a>

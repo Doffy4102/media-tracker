@@ -63,6 +63,14 @@ _Avoid_: provider, API
 A place a Media Item can be streamed, rented, bought, or watched for free.
 _Avoid_: streaming service
 
+**Official Platform**:
+A curated, per Media Type place a title can legally be consumed: streamed for
+Anime, read or bought for Manga and Book, bought and played for Game. The Media
+Page renders each as a chip that opens a title search on that platform, under
+the Media Type's verb (Watch, Read, Play). Distinct from a Watch Source, which
+carries per-title links from a Media Source's own data.
+_Avoid_: store, streaming service
+
 **Media Item View / User Media View**:
 The presentation shapes of a Media Item and of User Media together with its
 Media Item, as returned to callers.
