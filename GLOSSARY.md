@@ -97,3 +97,20 @@ _Avoid_: banner, spotlight
 The detail surface for a single Media Item: its metadata plus the viewer's
 User Media when one exists, otherwise the option to add it to their Library.
 _Avoid_: detail page, title page, main page
+
+**Quick Search**:
+The palette surface for finding a Media Item across the Media Sources: type-ahead
+results grouped by Media Type, reached from any page via the navbar or Ctrl+K.
+_Avoid_: search dialog, search modal
+
+**Profile**:
+The account surface for a User: their name and email, their library totals as a
+donut of Media Types, and sign-out. Reached from the avatar in the navbar.
+_Avoid_: account page, settings
+
+**Sign-in Identity**:
+A way for a User to prove who they are to the tracker: a password or a linked
+Google identity. A User owns one or more Sign-in Identities; passwords are
+optional, and a Google identity is trusted only when its email is
+provider-verified.
+_Avoid_: login, account, social login, OAuth connection, provider (= Media Source)

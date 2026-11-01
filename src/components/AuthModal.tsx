@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { GoogleButton, OrDivider } from "@/components/GoogleButton";
 
 export default function AuthModal({
   open,
@@ -75,6 +76,9 @@ export default function AuthModal({
             </Button>
           </form>
         )}
+
+        <OrDivider />
+        <GoogleButton />
 
         <p className="text-center text-sm text-muted-foreground">
           {mode === "register" ? (

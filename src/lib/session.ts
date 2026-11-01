@@ -2,6 +2,10 @@ import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
+export const SESSION_COOKIE_NAME = "session";
+export const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+export const SESSION_REFRESH_THRESHOLD_MS = 3 * 24 * 60 * 60 * 1000;
+
 const secretKey = process.env.AUTH_SECRET;
 if (!secretKey) throw new Error("AUTH_SECRET env variable is not set");
 const encodedKey = new TextEncoder().encode(secretKey);
@@ -10,6 +14,10 @@ export interface SessionPayload {
   [key: string]: unknown;
   userId: string;
   expiresAt: Date;
+}
+
+function sessionExpiry() {
+  return new Date(Date.now() + SESSION_MAX_AGE_MS);
 }
 
 export async function encrypt(payload: SessionPayload) {
@@ -25,41 +33,39 @@ export async function decrypt(session: string | undefined = "") {
     const { payload } = await jwtVerify(session, encodedKey, {
       algorithms: ["HS256"],
     });
+    if (typeof payload.expiresAt === "string") {
+      payload.expiresAt = new Date(payload.expiresAt);
+    }
     return payload as unknown as SessionPayload;
   } catch {
     return undefined;
   }
 }
 
-export async function createSession(userId: string) {
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  const session = await encrypt({ userId, expiresAt });
-  const cookieStore = await cookies();
-  cookieStore.set("session", session, {
+export function sessionCookieOptions(expiresAt: Date) {
+  return {
     httpOnly: true,
     secure: true,
     expires: expiresAt,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: "/",
-  });
+  };
 }
 
-export async function updateSession() {
+/** Signs a fresh session without writing the cookie. Use where the cookie is set on a manual Response (proxy, OAuth callback). */
+export async function signSession(userId: string) {
+  const expiresAt = sessionExpiry();
+  const token = await encrypt({ userId, expiresAt });
+  return { token, expiresAt };
+}
+
+export async function createSession(userId: string) {
+  const { token, expiresAt } = await signSession(userId);
   const cookieStore = await cookies();
-  const session = cookieStore.get("session")?.value;
-  const payload = await decrypt(session);
-  if (!session || !payload) return;
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  cookieStore.set("session", session, {
-    httpOnly: true,
-    secure: true,
-    expires: expiresAt,
-    sameSite: "lax",
-    path: "/",
-  });
+  cookieStore.set(SESSION_COOKIE_NAME, token, sessionCookieOptions(expiresAt));
 }
 
 export async function deleteSession() {
   const cookieStore = await cookies();
-  cookieStore.delete("session");
+  cookieStore.delete(SESSION_COOKIE_NAME);
 }

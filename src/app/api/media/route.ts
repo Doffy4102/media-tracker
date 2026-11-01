@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const pageParam = searchParams.get("page");
     const pageSizeParam = searchParams.get("pageSize");
 
-    const { items, pagination, counts } = await listUserMedia({
+    const { items, pagination, counts, typeCounts } = await listUserMedia({
       userId: session.userId,
       status,
       types: type ? type.split(",") : undefined,
@@ -44,6 +44,7 @@ export async function GET(request: NextRequest) {
       userMedia: items,
       pagination,
       counts,
+      typeCounts,
     });
   } catch (error) {
     console.error("GET /api/media error:", error);

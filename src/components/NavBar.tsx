@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { Menu, Search, X } from "lucide-react";
 import AuthStatus from "@/components/AuthStatus";
+import { useQuickSearch } from "@/components/quick-search";
 
 export default function NavBar() {
   const [open, setOpen] = useState(false);
+  const { openQuickSearch } = useQuickSearch();
+  const isMac = typeof navigator !== "undefined" && /mac/i.test(navigator.platform);
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
@@ -24,8 +27,29 @@ export default function NavBar() {
         </div>
         <div className="flex items-center gap-2">
           <div className="hidden sm:flex items-center gap-2">
+            <button
+              onClick={openQuickSearch}
+              className="flex h-8 items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              aria-label="Search (Ctrl+K)"
+            >
+              <Search className="h-3.5 w-3.5" />
+              <span>Search</span>
+              <kbd
+                suppressHydrationWarning
+                className="pointer-events-none rounded border border-border bg-background/60 px-1 font-sans text-[10px]"
+              >
+                {isMac ? "⌘K" : "Ctrl K"}
+              </kbd>
+            </button>
             <AuthStatus />
           </div>
+          <button
+            onClick={openQuickSearch}
+            className="sm:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            aria-label="Search"
+          >
+            <Search className="h-5 w-5" />
+          </button>
           <button
             onClick={() => setOpen(!open)}
             className="sm:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"

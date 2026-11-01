@@ -6,6 +6,7 @@ import { signup, type AuthState } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { GoogleButton, OrDivider } from "@/components/GoogleButton";
 
 export default function RegisterPage() {
   const [state, action, pending] = useActionState<AuthState, FormData>(signup, undefined);
@@ -39,6 +40,8 @@ export default function RegisterPage() {
               {pending ? "Creating account..." : "Create account"}
             </Button>
           </form>
+          <OrDivider className="my-4" />
+          <GoogleButton />
           <p className="text-center text-sm text-muted-foreground mt-4">
             Already have an account?{" "}
             <Link href="/auth/login" className="text-primary hover:underline font-medium">Sign in</Link>

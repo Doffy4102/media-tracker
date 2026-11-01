@@ -1,11 +1,29 @@
 "use client";
 
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { login, type AuthState } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { GoogleButton, OrDivider } from "@/components/GoogleButton";
+
+const GOOGLE_ERROR_MESSAGES: Record<string, string> = {
+  google_denied: "Google sign-in was cancelled.",
+  google_invalid_state: "That sign-in attempt expired. Please try again.",
+  google_email_unverified: "Your Google account's email is not verified. Verify it at accounts.google.com and try again.",
+  google_unconfigured: "Google sign-in is not configured on the server.",
+  google_failed: "Could not complete Google sign-in. Please try again.",
+  default: "Could not complete Google sign-in. Please try again.",
+};
+
+function GoogleErrorBanner() {
+  const error = useSearchParams().get("error");
+  if (!error) return null;
+  const message = GOOGLE_ERROR_MESSAGES[error] ?? GOOGLE_ERROR_MESSAGES.default;
+  return <p className="text-sm text-destructive text-center">{message}</p>;
+}
 
 export default function LoginPage() {
   const [state, action, pending] = useActionState<AuthState, FormData>(login, undefined);
@@ -39,6 +57,11 @@ export default function LoginPage() {
               {pending ? "Signing in..." : "Sign in"}
             </Button>
           </form>
+          <Suspense fallback={null}>
+            <GoogleErrorBanner />
+          </Suspense>
+          <OrDivider className="my-4" />
+          <GoogleButton />
           <p className="text-center text-sm text-muted-foreground mt-4">
             Don&apos;t have an account?{" "}
             <Link href="/auth/register" className="text-primary hover:underline font-medium">Sign up</Link>

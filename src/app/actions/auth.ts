@@ -6,7 +6,26 @@ import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { createSession, deleteSession } from "@/lib/session";
 import { sendPasswordResetEmail } from "@/lib/email";
+import {
+  enforceRateLimits,
+  getClientIp,
+  type RateLimitOutcome,
+} from "@/lib/rate-limit";
 import { redirect } from "next/navigation";
+
+const LOGIN_ATTEMPT_LIMIT = 10;
+const LOGIN_IP_LIMIT = 30;
+const LOGIN_WINDOW_SECONDS = 15 * 60;
+const SIGNUP_LIMIT = 5;
+const FORGOT_LIMIT = 3;
+const RESET_LIMIT = 10;
+const HOUR_SECONDS = 60 * 60;
+
+function rateLimitMessage(outcome: RateLimitOutcome) {
+  if (outcome.ok) return undefined;
+  const minutes = Math.max(1, Math.ceil(outcome.retryAfterSeconds / 60));
+  return `Too many attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`;
+}
 
 const SignupSchema = z.object({
   name: z.string().min(1, "Name is required").trim(),
@@ -35,6 +54,13 @@ export async function signup(prevState: AuthState, formData: FormData) {
   }
   const { name, email, password } = validated.data;
   try {
+    const ip = await getClientIp();
+    const limit = await enforceRateLimits([
+      { key: `signup:${ip}`, limit: SIGNUP_LIMIT, windowSeconds: HOUR_SECONDS },
+    ]);
+    if (!limit.ok) {
+      return { message: rateLimitMessage(limit) };
+    }
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return { message: "An account with this email already exists" };
@@ -60,8 +86,24 @@ export async function login(prevState: AuthState, formData: FormData) {
   }
   const { email, password } = validated.data;
   try {
+    const ip = await getClientIp();
+    const limit = await enforceRateLimits([
+      {
+        key: `login:acct:${email.toLowerCase()}:${ip}`,
+        limit: LOGIN_ATTEMPT_LIMIT,
+        windowSeconds: LOGIN_WINDOW_SECONDS,
+      },
+      {
+        key: `login:ip:${ip}`,
+        limit: LOGIN_IP_LIMIT,
+        windowSeconds: LOGIN_WINDOW_SECONDS,
+      },
+    ]);
+    if (!limit.ok) {
+      return { message: rateLimitMessage(limit) };
+    }
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) {
+    if (!user?.password) {
       return { message: "Invalid email or password" };
     }
     const valid = await bcrypt.compare(password, user.password);
@@ -95,6 +137,13 @@ export async function forgotPassword(prevState: AuthState, formData: FormData) {
   const { email } = validated.data;
 
   try {
+    const ip = await getClientIp();
+    const limit = await enforceRateLimits([
+      { key: `forgot:${ip}`, limit: FORGOT_LIMIT, windowSeconds: HOUR_SECONDS },
+    ]);
+    if (!limit.ok) {
+      return { message: rateLimitMessage(limit) };
+    }
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
       return { message: "If an account exists with this email, a reset link has been sent." };
@@ -136,6 +185,13 @@ export async function resetPassword(prevState: AuthState, formData: FormData) {
   const { token, password } = validated.data;
 
   try {
+    const ip = await getClientIp();
+    const limit = await enforceRateLimits([
+      { key: `reset:${ip}`, limit: RESET_LIMIT, windowSeconds: HOUR_SECONDS },
+    ]);
+    if (!limit.ok) {
+      return { message: rateLimitMessage(limit) };
+    }
     const user = await prisma.user.findFirst({
       where: {
         resetToken: token,

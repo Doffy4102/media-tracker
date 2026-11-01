@@ -43,3 +43,33 @@ export async function sendPasswordResetEmail(
     return false;
   }
 }
+
+export async function sendLoginMethodLinkedEmail(
+  to: string,
+  googleEmail: string,
+): Promise<boolean> {
+  try {
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+      to,
+      subject: "New sign-in method added to your Media Tracker account",
+      html: `
+        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+          <h2 style="margin-bottom: 16px;">Sign-in method linked</h2>
+          <p style="margin-bottom: 16px; color: #555;">
+            The Google account <strong>${googleEmail}</strong> was just linked to
+            your Media Tracker account. You can now sign in with Google.
+          </p>
+          <p style="margin-top: 24px; color: #999; font-size: 12px;">
+            If you didn't do this, sign in with your password and change it
+            immediately.
+          </p>
+        </div>
+      `,
+    });
+    return true;
+  } catch (error) {
+    console.error("Failed to send sign-in method email:", error);
+    return false;
+  }
+}

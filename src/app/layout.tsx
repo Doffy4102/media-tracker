@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins, Righteous } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/components/NavBar";
+import { QuickSearchProvider } from "@/components/quick-search";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -28,11 +29,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${poppins.variable} ${righteous.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col">
-        <NavBar />
-        <div className="flex-1 animate-fade-in">{children}</div>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <QuickSearchProvider>
+          <NavBar />
+          <div className="flex-1 animate-fade-in">{children}</div>
+        </QuickSearchProvider>
       </body>
     </html>
   );

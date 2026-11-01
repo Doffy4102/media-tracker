@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import MediaCard from "@/components/MediaCard";
-import SearchDialog from "@/components/SearchDialog";
 import MalImportDialog from "@/components/MalImportDialog";
+import { useQuickSearch } from "@/components/quick-search";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -88,7 +88,6 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<TabStatus>("ALL");
   const [items, setItems] = useState<DashboardItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [sortBy, setSortBy] = useState("updatedAt");
   const [typeFilters, setTypeFilters] = useState<string[]>([]);
@@ -96,6 +95,7 @@ export default function DashboardPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [reloadKey, setReloadKey] = useState(0);
+  const { openQuickSearch } = useQuickSearch();
 
   useEffect(() => {
     let cancelled = false;
@@ -155,7 +155,7 @@ export default function DashboardPage() {
               <span className="hidden sm:inline">Import</span>
             </Button>
             <Button
-              onClick={() => setSearchOpen(true)}
+              onClick={openQuickSearch}
               className="transition-all duration-200 hover:scale-105 active:scale-[0.97]"
             >
               <span className="sm:hidden">+</span>
@@ -232,7 +232,7 @@ export default function DashboardPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="space-y-2 animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
                 <div className="aspect-[2/3] bg-muted rounded-xl animate-shimmer rounded-md" />
@@ -247,10 +247,10 @@ export default function DashboardPage() {
               <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
             </div>
             <p className="text-muted-foreground mb-4">No media found</p>
-            <Button onClick={() => setSearchOpen(true)}>Add your first entry</Button>
+            <Button onClick={openQuickSearch}>Add your first entry</Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {items.map((item, i) => (
               <div key={item.id} className="animate-fade-in-up" style={{ animationDelay: `${i * 60}ms` }}>
                 <MediaCard item={item} />
@@ -295,7 +295,6 @@ export default function DashboardPage() {
         )}
       </main>
 
-      <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
       <MalImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={refresh} />
     </div>
   );

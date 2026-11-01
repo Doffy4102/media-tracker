@@ -18,6 +18,7 @@ export interface UserMediaPage {
   items: UserMediaView[];
   pagination: Pagination;
   counts: Record<string, number>;
+  typeCounts: Record<string, number>;
 }
 
 export interface ListUserMediaQuery {
@@ -77,7 +78,7 @@ export async function listUserMedia(query: ListUserMediaQuery): Promise<UserMedi
   const requestedPage = query.page != null && Number.isFinite(query.page) ? Math.floor(query.page) : 1;
   const page = Math.min(Math.max(requestedPage, 1), totalPages);
 
-  const [rows, groups] = await Promise.all([
+  const [rows, groups, typeRows] = await Promise.all([
     prisma.userMedia.findMany({
       where,
       include: { mediaItem: true },
@@ -90,12 +91,22 @@ export async function listUserMedia(query: ListUserMediaQuery): Promise<UserMedi
       where: { userId },
       _count: { _all: true },
     }),
+    prisma.userMedia.findMany({
+      where: { userId },
+      select: { mediaItem: { select: { type: true } } },
+    }),
   ]);
 
   const counts: Record<string, number> = { ALL: 0 };
   for (const group of groups) {
     counts[group.status] = group._count._all;
     counts.ALL += group._count._all;
+  }
+
+  const typeCounts: Record<string, number> = {};
+  for (const row of typeRows) {
+    const t = row.mediaItem.type;
+    typeCounts[t] = (typeCounts[t] ?? 0) + 1;
   }
 
   return {
@@ -108,5 +119,6 @@ export async function listUserMedia(query: ListUserMediaQuery): Promise<UserMedi
       hasMore: page < totalPages,
     },
     counts,
+    typeCounts,
   };
 }
