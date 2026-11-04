@@ -157,7 +157,7 @@ export async function forgotPassword(prevState: AuthState, formData: FormData) {
       data: { resetToken: token, resetTokenExpiry: expiresAt },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const baseUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
     const resetUrl = `${baseUrl}/auth/reset-password/${token}`;
 
     await sendPasswordResetEmail(user.email, resetUrl);
