@@ -11,13 +11,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { RatingStars } from "@/components/RatingStars";
+import { toast } from "@/components/ui/toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   MediaTypeLabels,
   UserStatusOptionsByMediaType,
   DEFAULT_STATUS_BY_MEDIA_TYPE,
   OfficialPlatformsByMediaType,
   PlatformSectionLabelByMediaType,
-  DEFAULT_STREAMING_SITES,
 } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { MediaPageData, MediaType, UserMediaView, UserStatus } from "@/lib/types";
@@ -50,7 +58,7 @@ export default function MediaPage({
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
-  const [actionError, setActionError] = useState("");
+  const [removeOpen, setRemoveOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -93,7 +101,6 @@ export default function MediaPage({
   const add = async () => {
     if (!media || adding) return;
     setAdding(true);
-    setActionError("");
     try {
       const res = await fetch("/api/media", {
         method: "POST",
@@ -122,8 +129,9 @@ export default function MediaPage({
       setRating(um.rating ?? 0);
       setReview(um.review ?? "");
       setProgress(um.progress ?? "");
+      toast.success("Added to your library");
     } catch {
-      setActionError("Couldn't add this title. Try again.");
+      toast.error("Couldn't add this title", "Try again.");
     } finally {
       setAdding(false);
     }
@@ -132,7 +140,6 @@ export default function MediaPage({
   const save = async () => {
     if (!userMedia || saving) return;
     setSaving(true);
-    setActionError("");
     try {
       const res = await fetch(`/api/media/${userMedia.id}`, {
         method: "PATCH",
@@ -148,8 +155,9 @@ export default function MediaPage({
       const out = await res.json();
       const um: UserMediaView = out.userMedia;
       setData((d) => (d ? { ...d, userMedia: um, mediaItem: um.mediaItem } : d));
+      toast.success("Changes saved");
     } catch {
-      setActionError("Failed to save changes");
+      toast.error("Failed to save changes");
     } finally {
       setSaving(false);
     }
@@ -157,9 +165,7 @@ export default function MediaPage({
 
   const remove = async () => {
     if (!userMedia || removing) return;
-    if (!confirm("Are you sure you want to remove this entry?")) return;
     setRemoving(true);
-    setActionError("");
     try {
       const res = await fetch(`/api/media/${userMedia.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("delete failed");
@@ -168,8 +174,10 @@ export default function MediaPage({
       setRating(0);
       setReview("");
       setProgress("");
+      setRemoveOpen(false);
+      toast.success("Removed from library");
     } catch {
-      setActionError("Failed to remove entry");
+      toast.error("Failed to remove entry");
     } finally {
       setRemoving(false);
     }
@@ -300,14 +308,14 @@ export default function MediaPage({
               </div>
             )}
 
-            {["ANIME", "MOVIE", "TV_SERIES"].includes(media.type) && (
+            {["ANIME", "MOVIE", "TV_SERIES"].includes(media.type) && data.streamSites.length > 0 && (
               <div className="animate-fade-in-up stagger-2">
                 <h3 className="text-sm font-medium mb-3">Stream Free</h3>
                 <div className="flex flex-wrap gap-2">
-                  {DEFAULT_STREAMING_SITES.map((site) => (
+                  {data.streamSites.map((site) => (
                     <a
-                      key={site.domain}
-                      href={site.searchUrl(media.title)}
+                      key={site.url}
+                      href={site.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="group inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground transition-all duration-200 hover:bg-muted hover:border-foreground/20 hover:shadow-sm active:scale-[0.97]"
@@ -382,10 +390,6 @@ export default function MediaPage({
                     />
                   </div>
 
-                  {actionError && (
-                    <p className="text-xs text-destructive">{actionError}</p>
-                  )}
-
                   <div className="flex gap-2 pt-2">
                     <Button
                       onClick={save}
@@ -402,13 +406,41 @@ export default function MediaPage({
                     <Button
                       variant="destructive"
                       size="icon"
-                      onClick={remove}
+                      onClick={() => setRemoveOpen(true)}
                       disabled={saving || removing}
+                      aria-label="Remove from library"
                       className="transition-all duration-200 hover:scale-105 active:scale-[0.97]"
                     >
-                      {removing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
+
+                  <Dialog open={removeOpen} onOpenChange={setRemoveOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Remove from library</DialogTitle>
+                        <DialogDescription>
+                          Remove &quot;{media.title}&quot; from your library? This also clears
+                          your status, rating, progress, and review for it.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setRemoveOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={remove} disabled={removing}>
+                          {removing ? (
+                            <span className="flex items-center gap-2">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Removing...
+                            </span>
+                          ) : (
+                            "Remove"
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </CardContent>
               </Card>
             ) : data.authed ? (
@@ -434,10 +466,6 @@ export default function MediaPage({
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {actionError && (
-                    <p className="text-xs text-destructive">{actionError}</p>
-                  )}
 
                   <Button onClick={add} disabled={adding} className="w-full transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]">
                     {adding ? (

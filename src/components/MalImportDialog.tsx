@@ -5,6 +5,7 @@ import { Upload, Loader2, CheckCircle2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/components/ui/toast";
 
 type ImportState = "idle" | "parsing" | "importing" | "results";
 
@@ -93,7 +94,7 @@ export default function MalImportDialog({
       setFileName("");
       xmlTextRef.current = "";
       if (inputRef.current) inputRef.current.value = "";
-      alert(err instanceof Error ? err.message : "Failed to parse file");
+      toast.error(err instanceof Error ? err.message : "Failed to parse file");
     }
   };
 
@@ -121,7 +122,7 @@ export default function MalImportDialog({
       onImport?.();
     } catch (err) {
       setState("idle");
-      alert(err instanceof Error ? err.message : "Import failed");
+      toast.error(err instanceof Error ? err.message : "Import failed");
     }
   };
 

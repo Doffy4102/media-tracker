@@ -4,6 +4,7 @@ import { verifySession } from "@/lib/dal";
 import { providerForType } from "@/lib/media-providers";
 import { refreshFromSource } from "@/lib/media-refresh";
 import { toMediaItemView, toUserMediaView } from "@/lib/media-view";
+import { getStreamSites } from "@/lib/stream-sites";
 import { MediaType, type MediaPageData, type WatchSource } from "@/lib/types";
 
 const validTypes = new Set<string>(Object.values(MediaType));
@@ -21,6 +22,7 @@ export async function GET(request: NextRequest) {
     const mediaType = type as MediaType;
     const session = await verifySession();
     const authed = Boolean(session);
+    const streamSites = await getStreamSites(mediaType);
 
     const stored = await prisma.mediaItem.findUnique({
       where: { type_apiId: { type: mediaType, apiId } },
@@ -46,6 +48,7 @@ export async function GET(request: NextRequest) {
         mediaItem: toMediaItemView(mediaItem),
         userMedia: userMedia ? toUserMediaView(userMedia) : null,
         authed,
+        streamSites,
       };
       return NextResponse.json(data);
     }
@@ -85,6 +88,7 @@ export async function GET(request: NextRequest) {
         },
         userMedia: null,
         authed,
+        streamSites,
       };
       return NextResponse.json(data);
     } catch (e) {

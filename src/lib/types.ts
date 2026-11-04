@@ -95,4 +95,5 @@ export interface MediaPageData {
   mediaItem: MediaItemView;
   userMedia: UserMediaView | null;
   authed: boolean;
+  streamSites: { name: string; url: string }[];
 }

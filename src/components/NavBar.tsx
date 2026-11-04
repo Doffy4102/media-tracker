@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Menu, Search, X } from "lucide-react";
 import AuthStatus from "@/components/AuthStatus";
 import { useQuickSearch } from "@/components/quick-search";
@@ -17,9 +18,19 @@ export default function NavBar() {
         <div className="flex items-center gap-6">
           <Link
             href="/"
-            className="font-heading font-bold text-lg bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent transition-opacity duration-200 hover:opacity-80"
+            className="flex items-center gap-2 transition-opacity duration-200 hover:opacity-80"
           >
-            Media Tracker
+            <Image
+              src="/logo.svg"
+              alt=""
+              width={26}
+              height={26}
+              unoptimized
+              className="shrink-0"
+            />
+            <span className="font-heading font-bold text-lg bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Media Shelf
+            </span>
           </Link>
           <Link href="/dashboard" className="hidden sm:block text-sm text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-105">
             Dashboard

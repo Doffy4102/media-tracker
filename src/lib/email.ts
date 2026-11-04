@@ -18,12 +18,12 @@ export async function sendPasswordResetEmail(
     await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to,
-      subject: "Reset your Media Tracker password",
+      subject: "Reset your Media Shelf password",
       html: `
         <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
           <h2 style="margin-bottom: 16px;">Password Reset</h2>
           <p style="margin-bottom: 16px; color: #555;">
-            You requested a password reset for your Media Tracker account.
+            You requested a password reset for your Media Shelf account.
           </p>
           <p style="margin-bottom: 24px; color: #555;">
             Click the button below to set a new password. This link expires in 1 hour.
@@ -52,13 +52,13 @@ export async function sendLoginMethodLinkedEmail(
     await transporter.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to,
-      subject: "New sign-in method added to your Media Tracker account",
+      subject: "New sign-in method added to your Media Shelf account",
       html: `
         <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
           <h2 style="margin-bottom: 16px;">Sign-in method linked</h2>
           <p style="margin-bottom: 16px; color: #555;">
             The Google account <strong>${googleEmail}</strong> was just linked to
-            your Media Tracker account. You can now sign in with Google.
+            your Media Shelf account. You can now sign in with Google.
           </p>
           <p style="margin-top: 24px; color: #999; font-size: 12px;">
             If you didn't do this, sign in with your password and change it

@@ -98,6 +98,13 @@ The detail surface for a single Media Item: its metadata plus the viewer's
 User Media when one exists, otherwise the option to add it to their Library.
 _Avoid_: detail page, title page, main page
 
+**Stream Free**:
+The Media Page section listing free streaming sites for screen Media Types
+(Anime, Movie, TV): the eight best sites per type, refreshed daily from FMHY's
+streaming page, rendered as chips that open each site's homepage. Falls back to
+a built-in list until the first refresh has populated it.
+_Avoid_: streaming links, watch options
+
 **Quick Search**:
 The palette surface for finding a Media Item across the Media Sources: type-ahead
 results grouped by Media Type, reached from any page via the navbar or Ctrl+K.

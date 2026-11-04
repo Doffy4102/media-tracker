@@ -3,6 +3,7 @@ import { Poppins, Righteous } from "next/font/google";
 import "./globals.css";
 import NavBar from "@/components/NavBar";
 import { QuickSearchProvider } from "@/components/quick-search";
+import { Toaster } from "@/components/ui/toast";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -17,7 +18,7 @@ const righteous = Righteous({
 });
 
 export const metadata: Metadata = {
-  title: "Media Tracker",
+  title: "Media Shelf",
   description: "Track your anime, manga, movies, TV series, and books",
 };
 
@@ -36,6 +37,7 @@ export default function RootLayout({
         <QuickSearchProvider>
           <NavBar />
           <div className="flex-1 animate-fade-in">{children}</div>
+          <Toaster />
         </QuickSearchProvider>
       </body>
     </html>
