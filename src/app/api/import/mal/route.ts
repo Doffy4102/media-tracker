@@ -5,11 +5,17 @@ import { parseMalXml } from "@/lib/mal-xml-parser";
 import { mapMalStatus } from "@/lib/mal-status-map";
 import { providerForType } from "@/lib/media-providers";
 import type { MediaType } from "@/lib/types";
+import { throttle, throttleErrorResponse } from "@/lib/attempt-throttle";
 
 export async function POST(request: NextRequest) {
   const session = await verifySession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const limit = await throttle("import", { userId: session.userId });
+  if (!limit.ok) {
+    return throttleErrorResponse(limit);
   }
 
   try {

@@ -121,3 +121,9 @@ Google identity. A User owns one or more Sign-in Identities; passwords are
 optional, and a Google identity is trusted only when its email is
 provider-verified.
 _Avoid_: login, account, social login, OAuth connection, provider (= Media Source)
+
+**Attempt Throttle**:
+A time-windowed budget of attempts for a named abuse-prone action (sign-in,
+import, lookup, …), counted per actor (user or IP). Once spent, further
+attempts are refused until the window resets.
+_Avoid_: rate limit

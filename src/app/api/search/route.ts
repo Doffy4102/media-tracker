@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { providerForType, searchableTypes } from "@/lib/media-providers";
 import type { MediaSearchResult, MediaType } from "@/lib/types";
 import { verifySession } from "@/lib/dal";
+import { throttle, throttleErrorResponse } from "@/lib/attempt-throttle";
 
 export async function GET(request: Request) {
   const session = await verifySession();
@@ -15,6 +16,11 @@ export async function GET(request: Request) {
 
   if (!query || query.trim().length === 0) {
     return NextResponse.json({ error: "Query parameter q is required" }, { status: 400 });
+  }
+
+  const limit = await throttle("search", { userId: session.userId });
+  if (!limit.ok) {
+    return throttleErrorResponse(limit);
   }
 
   try {

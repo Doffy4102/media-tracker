@@ -15,6 +15,7 @@ const GOOGLE_ERROR_MESSAGES: Record<string, string> = {
   google_email_unverified: "Your Google account's email is not verified. Verify it at accounts.google.com and try again.",
   google_unconfigured: "Google sign-in is not configured on the server.",
   google_failed: "Could not complete Google sign-in. Please try again.",
+  rate_limited: "Too many attempts. Please wait a moment and try again.",
   default: "Could not complete Google sign-in. Please try again.",
 };
 

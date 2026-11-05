@@ -6,23 +6,14 @@ import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { createSession, deleteSession } from "@/lib/session";
 import { sendPasswordResetEmail } from "@/lib/email";
-import {
-  enforceRateLimits,
-  getClientIp,
-  type RateLimitOutcome,
-} from "@/lib/rate-limit";
+import { throttle, type ThrottleOutcome } from "@/lib/attempt-throttle";
 import { redirect } from "next/navigation";
 
-const LOGIN_ATTEMPT_LIMIT = 10;
-const LOGIN_IP_LIMIT = 30;
-const LOGIN_WINDOW_SECONDS = 15 * 60;
-const SIGNUP_LIMIT = 5;
-const FORGOT_LIMIT = 3;
-const RESET_LIMIT = 10;
-const HOUR_SECONDS = 60 * 60;
-
-function rateLimitMessage(outcome: RateLimitOutcome) {
+function throttleMessage(outcome: ThrottleOutcome) {
   if (outcome.ok) return undefined;
+  if (outcome.reason === "unavailable") {
+    return "Something went wrong. Please try again shortly.";
+  }
   const minutes = Math.max(1, Math.ceil(outcome.retryAfterSeconds / 60));
   return `Too many attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`;
 }
@@ -54,12 +45,9 @@ export async function signup(prevState: AuthState, formData: FormData) {
   }
   const { name, email, password } = validated.data;
   try {
-    const ip = await getClientIp();
-    const limit = await enforceRateLimits([
-      { key: `signup:${ip}`, limit: SIGNUP_LIMIT, windowSeconds: HOUR_SECONDS },
-    ]);
+    const limit = await throttle("signup");
     if (!limit.ok) {
-      return { message: rateLimitMessage(limit) };
+      return { message: throttleMessage(limit) };
     }
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -86,21 +74,9 @@ export async function login(prevState: AuthState, formData: FormData) {
   }
   const { email, password } = validated.data;
   try {
-    const ip = await getClientIp();
-    const limit = await enforceRateLimits([
-      {
-        key: `login:acct:${email.toLowerCase()}:${ip}`,
-        limit: LOGIN_ATTEMPT_LIMIT,
-        windowSeconds: LOGIN_WINDOW_SECONDS,
-      },
-      {
-        key: `login:ip:${ip}`,
-        limit: LOGIN_IP_LIMIT,
-        windowSeconds: LOGIN_WINDOW_SECONDS,
-      },
-    ]);
+    const limit = await throttle("login", { email });
     if (!limit.ok) {
-      return { message: rateLimitMessage(limit) };
+      return { message: throttleMessage(limit) };
     }
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user?.password) {
@@ -137,12 +113,9 @@ export async function forgotPassword(prevState: AuthState, formData: FormData) {
   const { email } = validated.data;
 
   try {
-    const ip = await getClientIp();
-    const limit = await enforceRateLimits([
-      { key: `forgot:${ip}`, limit: FORGOT_LIMIT, windowSeconds: HOUR_SECONDS },
-    ]);
+    const limit = await throttle("forgot");
     if (!limit.ok) {
-      return { message: rateLimitMessage(limit) };
+      return { message: throttleMessage(limit) };
     }
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
@@ -185,12 +158,9 @@ export async function resetPassword(prevState: AuthState, formData: FormData) {
   const { token, password } = validated.data;
 
   try {
-    const ip = await getClientIp();
-    const limit = await enforceRateLimits([
-      { key: `reset:${ip}`, limit: RESET_LIMIT, windowSeconds: HOUR_SECONDS },
-    ]);
+    const limit = await throttle("reset");
     if (!limit.ok) {
-      return { message: rateLimitMessage(limit) };
+      return { message: throttleMessage(limit) };
     }
     const user = await prisma.user.findFirst({
       where: {

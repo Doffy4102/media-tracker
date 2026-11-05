@@ -35,6 +35,8 @@ model RateLimit {
   key             String   @id
   count           Int
   windowExpiresAt DateTime
+
+  @@index([windowExpiresAt])
 }
 
 model MediaItem {

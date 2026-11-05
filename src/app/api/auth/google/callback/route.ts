@@ -14,6 +14,7 @@ import {
   signSession,
 } from "@/lib/session";
 import { sendLoginMethodLinkedEmail } from "@/lib/email";
+import { throttle, throttleErrorResponse } from "@/lib/attempt-throttle";
 
 function googleCallbackResponse(target: string) {
   const response = NextResponse.redirect(target);
@@ -23,6 +24,11 @@ function googleCallbackResponse(target: string) {
 }
 
 export async function GET(request: NextRequest) {
+  const limit = await throttle("google:callback");
+  if (!limit.ok) {
+    return throttleErrorResponse(limit);
+  }
+
   const url = request.nextUrl;
 
   if (url.searchParams.get("error")) {

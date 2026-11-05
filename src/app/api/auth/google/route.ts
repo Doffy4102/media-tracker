@@ -8,8 +8,13 @@ import {
   googleLoginErrorUrl,
   randomState,
 } from "@/lib/google";
+import { throttle } from "@/lib/attempt-throttle";
 
 export async function GET() {
+  const limit = await throttle("google:start");
+  if (!limit.ok) {
+    return NextResponse.redirect(googleLoginErrorUrl("rate_limited"));
+  }
   try {
     const state = randomState();
     const { verifier, challenge } = createPkce();

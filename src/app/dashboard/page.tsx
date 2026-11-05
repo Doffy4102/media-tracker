@@ -98,6 +98,7 @@ export default function DashboardPage() {
   const { openQuickSearch } = useQuickSearch();
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- loading flag flips synchronously when fetch deps change */
     let cancelled = false;
     setLoading(true);
     const params = new URLSearchParams();
@@ -117,6 +118,7 @@ export default function DashboardPage() {
       })
       .catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [activeTab, sortBy, typeFilters, page, reloadKey]);
 
   const toggleType = (type: string) => {

@@ -6,10 +6,15 @@ import { refreshFromSource } from "@/lib/media-refresh";
 import { toMediaItemView, toUserMediaView } from "@/lib/media-view";
 import { getStreamSites } from "@/lib/stream-sites";
 import { MediaType, type MediaPageData, type WatchSource } from "@/lib/types";
+import { throttle, throttleErrorResponse } from "@/lib/attempt-throttle";
 
 const validTypes = new Set<string>(Object.values(MediaType));
 
 export async function GET(request: NextRequest) {
+  const limit = await throttle("lookup");
+  if (!limit.ok) {
+    return throttleErrorResponse(limit);
+  }
   try {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type");

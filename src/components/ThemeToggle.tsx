@@ -9,6 +9,7 @@ export default function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- syncing React state with the external theme system once on mount */
     const stored = localStorage.getItem("theme");
     if (stored === "dark") {
       setDark(true);
@@ -22,6 +23,7 @@ export default function ThemeToggle() {
       if (prefersDark) document.documentElement.classList.add("dark");
     }
     setMounted(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   const toggle = () => {
